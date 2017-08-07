@@ -95,14 +95,14 @@ unit <- R6::R6Class("unit",
         (self$avg_s - self$avg_m)
       invisible(self)
     },
-    #' clamp_cycle iterates one time step with unit object with clamped input
-    #' (i.e activation is instantenously set to input)
+    #' clamp_cycle iterates one time step with unit object with clamped
+    #' activation (i.e activation is instantenously set)
     #'
-    #' @param input activation that you want to clamp
+    #' @param activation activation that you want to clamp
     #' @rdname unit
-    clamp_cycle = function(input){
-      ## Clamping the activty to the input
-      self$act <- input
+    clamp_cycle = function(activation){
+      ## Clamping the activty to the activation
+      self$act <- activation
 
       ## updating averages
       private$avg_ss <- private$avg_ss + private$cyc_dt * private$ss_dt *
@@ -121,6 +121,8 @@ unit <- R6::R6Class("unit",
         # u = this unit
         # Based on the description in:
         # https://grey.colorado.edu/ccnlab/index.php/#Leabra_Hog_Prob_Fix#Adaptive_Contrast_Impl
+        # it tends to move towards the minium avg_l (0.1) if avg_m is smaller
+        # 0.2 if it is larger, than it will tend to got to avg_m
         if (self$avg_m > 0.2){
           self$avg_l <- self$avg_l + private$avg_l_dt *
             (private$avg_l_max - self$avg_m)
@@ -164,7 +166,7 @@ unit <- R6::R6Class("unit",
     #' binding, meaning that when this value is accessed it is updated
     #'
     #' @rdname unit
-               rel_avg_l = function(){
+               avg_l_prc = function(){
                  (self$avg_l - private$avg_l_min) /
                    (private$avg_l_max - private$avg_l_min)
                }),
@@ -200,7 +202,7 @@ unit <- R6::R6Class("unit",
     s_dt = 0.5,         # time step for short average
     m_dt = 0.1,         # time step for medium-term average
     avg_l_dt = 0.1,     # time step for long-term average
-    avg_l_max = 1.5,    # max value of avg_l
+    avg_l_max = 1.5,    # max value of avg_l; why can this be larger than 1?----
     avg_l_min = 0.1,    # min value of avg_l
     e_rev_e = 1,        # excitatory reversal potential
     e_rev_i = .25,      # inhibitory reversal potential
