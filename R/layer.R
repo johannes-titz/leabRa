@@ -52,22 +52,21 @@ layer <- R6::R6Class("layer",
     #'
     #' @rdname layer
     get_unit_scaled_acts = function(){
-      private$recip_avg_act_n * self$get_unit_acts()
+      data.frame(act_scaled = private$recip_avg_act_n * self$get_unit_acts(),
+                 u_id = 1:self$n)
     },
     #' cycle iterates one time step with layer object
     #'
-    #' @param intern_input single combined vector with inputs from all layers.
-    #'   Each input has already been scaled by the recip_avg_act_n of its layer
-    #'   of origin and by the wt_scale_rel factor. The weight matrix is
-    #'   multiplied with this vector
+    #' @param g_e_intern single combined vector with g_e from all layers.
     #' @param ext_input vector with inputs not coming from another layer, with
     #'   length equalling the number of units in this layer. If empty, no
     #'   external inputs are processed. Note that this is basically an
-    #'   excitatory conductance value (g_e)
+    #'   excitatory conductance value (g_e), although it is also used as an
+    #'   activation value when layers are clamped
     #' @rdname layer
-    cycle = function(intern_input, ext_input = NULL){
+    cycle = function(g_e_intern, ext_input = NULL){
       ## obtaining the g_e_per_unit
-      g_e_per_unit <- self$ce_wt %*% intern_input # contrast enhanced weights are used
+      g_e_per_unit <- g_e_intern # contrast enhanced weights are used
       if (!isempty(ext_input)) g_e_per_unit <- g_e_per_unit + ext_input
       ## obtaining inhibition
       private$g_e_avg <- mean(g_e_per_unit)
@@ -86,6 +85,7 @@ layer <- R6::R6Class("layer",
     #' activations (i.e activations are instantenously set without dt)
     #'
     #' @param activations vector of activations that you want to clamp
+    #'
     #' @rdname layer
     clamp_cycle = function(activations){
       self$units <- Map(function(x, y) x$clamp_cycle(y), self$units, activations)
