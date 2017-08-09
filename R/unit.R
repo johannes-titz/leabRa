@@ -1,9 +1,10 @@
-#' @include misc.R
-NULL
-
-# leabra unit class-------------------------------------------------------------
 #' Leabra unit class
 #'
+#' @docType class
+#' @importFrom R6 R6Class
+#' @export
+#' @return Object of \code{\link{R6Class}}
+#' @format \code{\link{R6Class}} object.
 #' @field act activation ("firing rate") of the unit (sent to other units)
 #' @field g_e time-averaged excitatory conductance, asymptotically approaches
 #' g_e_raw (see cycle method), aka net input
@@ -20,16 +21,21 @@ NULL
 #' @field avg_l long-term running average activation, integrates over avg_m,
 #' drives long-term floating average for Hebbian learning
 #'
+#' @section Methods:
+#' \describe{
+#'   \item{\code{example_method(parameter_1 = 3)}}{This method uses \code{parameter_1} to ...}
+#'
+#'   \item{\code{nxx1(x = 3)}}{nxx1 calculates noisy x/(x+1) function
+#' (convolution of x/(x+1) with a Gaussian function),
+#'
+#' x is a numeric vector to calculate nxx1 (x is either v_m_eq - v_m_thr or g_e - g_e_thr)}
+#' }
 unit <- R6::R6Class("unit",
   # public ---------------------------------------------------------------------
   public = list(
-    #' cycle iterates one time step with unit object, called by layer cycle
-    #' method
-    #'
-    #' @param g_e_raw excitatory raw conductance (instantaneous, scaled,
-    #' received input)
-    #' @param gc_i inhibitory conductance (feedfoward-feedback inhibition)
-    #' @rdname unit
+    initialize = function(){
+
+    },
     cycle = function(g_e_raw, gc_i){
       ## updating g_e input
       private$g_e <- private$g_e + private$cyc_dt * private$g_e_dt *
@@ -63,6 +69,7 @@ unit <- R6::R6Class("unit",
 
 
       # finding whether there's an action potential
+      cat("private$v_m = ", private$v_m, "\n")
       if (private$v_m > private$spk_thr){
         private$spike <- 1
         private$v_m <- private$v_m_r
@@ -95,11 +102,6 @@ unit <- R6::R6Class("unit",
         (self$avg_s - self$avg_m)
       invisible(self)
     },
-    #' clamp_cycle iterates one time step with unit object with clamped
-    #' activation (i.e activation is instantenously set)
-    #'
-    #' @param activation activation that you want to clamp
-    #' @rdname unit
     clamp_cycle = function(activation){
       ## Clamping the activty to the activation
       self$act <- activation
@@ -113,9 +115,6 @@ unit <- R6::R6Class("unit",
         (self$avg_s - self$avg_m)
       invisible(self)
     },
-    #' updt_avg_l updates the long-term average "avg_l"
-    #'
-    #' @rdname unit
     updt_avg_l = function(){
         # This fuction updates the long-term average "avg_l"
         # u = this unit
@@ -132,13 +131,6 @@ unit <- R6::R6Class("unit",
         }
         invisible(self)
       },
-    #' reset sets the activation to a random value, and sets all activation time
-    #' averages to that value, used to begin trials from a random stationary
-    #' point the activity values may also be set to zero
-    #'
-    #' @param random logical variable, if TRUE set activation randomly between
-    #' .05 and .95, if FALSE set activation to 0
-    #' @rdname unit
     reset = function(random = F){
       ifelse(random == T, self$act <- 0.05 + 0.9 * runif(1),
              self$act <- 0)
@@ -162,22 +154,14 @@ unit <- R6::R6Class("unit",
   ),
   # active ---------------------------------------------------------------------
   active = list(
-    #' value of avg_l relative to its max and min (for XCAL), this is an active
-    #' binding, meaning that when this value is accessed it is updated
-    #'
-    #' @rdname unit
                avg_l_prc = function(){
                  (self$avg_l - private$avg_l_min) /
                    (private$avg_l_max - private$avg_l_min)
                }),
   # private --------------------------------------------------------------------
   private = list(
-    #' nxx1 calculates noisy x/(x+1) function (convolution of x/(x+1) with a
-    #' Gaussian function)
-    #'
-    #' @param x numeric vector to calculate nxx1 for (x is either v_m_eq - v_m_thr or
-              #' g_e - g_e_thr)
-              #' @rdname unit
+
+    #' @rdname unit
               nxx1 = function(x){
                 # nxx1_df is a df that is used as a lookup-table, it is stored internally
                 # but you can generate the data with the create_nxx1 function
