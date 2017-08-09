@@ -12,21 +12,21 @@
     #devtools.desc.author = '"Sergio Verduzco-Flores <> [aut]"',
     devtools.desc.license = "GPL-3",
     devtools.desc.suggests = NULL,
-    devtools.desc = list(),
-    devtools::use_package("signal"),
-    devtools::use_package("R.cache"),
-    devtools::use_package("pracma")
+    devtools.desc = list()
     #devtools::create()
   )
   toset <- names(op.devtools) %in% names(op)
   if(any(toset)) options(op.devtools[toset])
+
   invisible()
 }
 
-# prevents deleting an existing generic function--------------------------------
-setGenericVerif <- function(x, y){
-  if (!isGeneric(x)) setGeneric(x, y)
-}
+# packages needed
+devtools::use_package("signal")
+devtools::use_package("R.cache")
+devtools::use_package("R6")
+devtools::use_package("dplyr")
+devtools::use_package("plyr")
 
 isempty <- function(x)
 {
