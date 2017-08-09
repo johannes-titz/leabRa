@@ -5,7 +5,8 @@ set.seed(1)
 cosine <- function(x, y){
   sum(x * y) / (sqrt(sum(x ^ 2)) * sqrt(sum(y ^ 2)))
 }
-
+library(readr)
+library(dplyr)
 # This program constructs a 3-layer random associator using the 'network',
 # 'layer', and 'unit' objects. It is a test of these
 # clases, and a tutorial in how to construct networks with them.
@@ -14,44 +15,40 @@ cosine <- function(x, y){
 # point, layers are either fully connected or unconnected
 
 # 1.1) Set the dimensions of the layers specifying 3 layers and their dimensions
-dim_lays <- list(c(1, 5), c(1, 10), c(1, 5))
 
-# 1.2) Specify connectivity between layers
-cxn <- matrix(c(0, 0, 0,
-                1, 0, 0.2,
-                0, 1, 0), nrow = 3, byrow = T)
+# 1.1) Set the dimensions of the layers specifying 3 layers and their dimensions
+cxn_tbl <- read_delim("cxn_table.csv", ";", col_types = list("i", "c", "c", "n", "l"))
 
-# cxn(i,j) = c means that layer i receives cxn from j, and that
-# they have a relative strength c. In this case, feedback cxn are 5
-# times weaker. The relative weight scale of layer i comes from the non-zero
-# entries of row i.  The network constructor will normalize this matrix so that
-# if there are non-zero entries in a row, they add to 1.
+lays_tbl <- read_delim("dim_table.csv", ";",
+                       col_types = list("c", "i", "i", "n", "c"))
 
-## 2) Now specify the initial weight matrices
-n_lays <- length(dim_lays)  # number of layers
-n_units <- rep(0, n_lays)  # number of units in each layer
-for (i in 1:n_lays) {
-    n_units[i] <- dim_lays[[i]][1] * dim_lays[[i]][2]
+net <- network$new(lays_tbl, cxn_tbl)
+
+create_rnd_input <- function(lays_tbl, n_inputs, prop_active_units){
+  ext_inputs_tbl <- plyr::ddply(lays_tbl, 1, function(x)
+    expand.grid(
+      input = 1:n_inputs,
+      layer = x$layer,
+      type = x$type,
+      unit_id = 1:(x$n_rows * x$n_cols)
+    ))
+  ext_inputs_tbl <- dplyr::mutate(ext_inputs_tbl,
+                                  activation = ifelse(type == "hidden", NA,
+                                                      sample(c(0.01, 0.96),
+                                                             n(),
+                                                             prop_active_units,
+                                                             replace = T)))
+  ext_inputs_tbl <- arrange(ext_inputs_tbl, c(input))
 }
 
-# this cell will contain all the initial connection matrices
-w0 <- matrix(vector(mode = "list", length = length(dim_lays) ^ 2), nrow = 3)
-for (rcv in 1:n_lays) {
-    for (snd in 1:n_lays) {
-        if (cxn[rcv, snd] > 0) {
-            # random initial weights between 0.3 and 0.7, close to 0.5 because
-            # of weight contrast enhancement
-            w0[rcv, snd][[1]] <- 0.3 + 0.4 *
-              matrix(runif(n_units[rcv] * n_units[snd]), nrow = n_units[rcv])
-            # notice that the dimensions of the layer don't matter, only the
-            # number of units. Layers are 2-dimensional only for purposes of
-            # visualization.
-        }
-    }
-}
-
+ext_inputs <- create_rnd_input(lays_tbl, 15, c(0.7, 0.3))
+ext_inputs <- ext_input[ext_input == 1,]
 ## 3) Create the network using the constructor
-net <- network$new(dim_lays, cxn, w0)
+
+self <- net
+nxx1_df <- create_nxx1()
+# go through all inputs
+net$cycle(ext_input[ext_input == 1,], clamp_inp = 1)
 
 ## 4) Let's create some inputs
 n_inputs <- 5  # number of input-output patterns to associate
