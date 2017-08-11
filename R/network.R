@@ -66,7 +66,7 @@ network <-  R6::R6Class("network",
     #' @param clamp_inp a binary flag; 1: lays are clamped to their input value
     #' 0: inputs summed to netins.
     #' @rdname network
-    cycle = function(ext_inputs, clamp_inp){
+    cycle = function(ext_input, clamp_inp){
       # todo: tests -------------
       # Testing the arguments and reshaping the input
       # test whether any layers or units are used that do not exist
@@ -99,14 +99,19 @@ network <-  R6::R6Class("network",
       # the cxn_strength
       #
       # actually we could multiply it with the weight already, right?
-      wt_table <- dplyr::left_join(net$cxn$wt_table, scaled_acts,
+      wt_table <- dplyr::left_join(self$cxn$wt_table, scaled_acts,
                        by = c("lay_send" = "layer", "u_id_send" = "u_id"))
       # scale activity by strength as well
       wt_table <- dplyr::mutate(wt_table, g_e = act_scaled * strength * ce_wt)
-      g_e_intern <- wt_table$g_e
+      wt_table <- dplyr::group_by(wt_table, lay_recv, u_id_recv)
+      wt_table <- dplyr::summarize(wt_table, g_e_intern = sum(g_e))
+      g_e_intern <- split(wt_table$g_e_intern, wt_table$lay_recv)
+
+      #cat("g_e_intern in network: ", g_e_intern, "\n")
       # for unclamped layers
       # if the layer is not clamped, run cycle with inputs
       cycle_non_clamp <- function(lay, g_e_intern, ext_input, lay_clamped){
+        cat("g_e_intern in cycle_non_clamp: ", g_e_intern, "\n")
         if (lays_clamped$clamped) lay$cycle(g_e_intern, ext_input)
       }
       self$lays <- Map(cycle_non_clamp, self$lays, g_e_intern, ext_inputs,

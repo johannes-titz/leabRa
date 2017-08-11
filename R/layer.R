@@ -65,6 +65,7 @@ layer <- R6::R6Class("layer",
     #'   activation value when layers are clamped
     #' @rdname layer
     cycle = function(g_e_intern, ext_input = NULL){
+      cat("g_e_intern: ", g_e_intern, "\n")
       ## obtaining the g_e_per_unit
       g_e_per_unit <- g_e_intern # contrast enhanced weights are used
       if (!isempty(ext_input)) g_e_per_unit <- g_e_per_unit + ext_input
@@ -77,6 +78,7 @@ layer <- R6::R6Class("layer",
       ## calling the cycle method for all units
       # todo: split cycle function, so that nxx1 call can be done with a
       # functional, much faster!
+      cat("g_e_per_unit: ", g_e_per_unit, "\n")
       Map(function(x, y, z) x$cycle(y, z), self$units, g_e_per_unit, g_i)
       invisible(self)
     },
@@ -105,7 +107,7 @@ layer <- R6::R6Class("layer",
       avg_m <- sapply(self$units, function(x) x$avg_m)
       avg_l <- sapply(self$units, function(x) x$avg_l)
 
-      # obatining avg_s_with_m
+      # obtaining avg_s_with_m
       avg_s_with_m <- m_avg_prc_in_s_avg * avg_m +
         (1 - m_avg_prc_in_s_avg) * avg_s
 

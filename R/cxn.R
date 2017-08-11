@@ -1,6 +1,6 @@
 #' @include unit.R
 
-# leabra "cxn" class----------------------------------------------------------
+# leabra "cxn" class------------------------------------------------------------
 #' Leabra connection class
 #'
 #' @field units a list with all the unit objects of the layer

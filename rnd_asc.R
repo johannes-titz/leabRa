@@ -32,6 +32,7 @@ create_rnd_input <- function(lays_tbl, n_inputs, prop_active_units){
       type = x$type,
       unit_id = 1:(x$n_rows * x$n_cols)
     ))
+
   ext_inputs_tbl <- dplyr::mutate(ext_inputs_tbl,
                                   activation = ifelse(type == "hidden", NA,
                                                       sample(c(0.01, 0.96),
@@ -42,13 +43,13 @@ create_rnd_input <- function(lays_tbl, n_inputs, prop_active_units){
 }
 
 ext_inputs <- create_rnd_input(lays_tbl, 15, c(0.7, 0.3))
-ext_inputs <- ext_input[ext_input == 1,]
+ext_inputs <- ext_inputs[ext_inputs$input == 1,]
 ## 3) Create the network using the constructor
 
 self <- net
 nxx1_df <- create_nxx1()
 # go through all inputs
-net$cycle(ext_input[ext_input == 1,], clamp_inp = 1)
+net$cycle(ext_inputs, clamp_inp = 1)
 
 ## 4) Let's create some inputs
 n_inputs <- 5  # number of input-output patterns to associate
