@@ -46,7 +46,7 @@ network <-  R6::R6Class("network",
 
       # list that contains layer objects
       self$lays <- plyr::dlply(lays_tbl, 1, function(x)
-        layer$new(c(x$n_rows, x$n_cols), x$g_i))
+        layer$new(c(x$n_rows, x$n_cols), x$g_i, x$layer))
       # set the contrast-enhanced version of the weights
       lapply(self$lays, function(x) x$set_ce_weights(off, gain))
 
@@ -107,11 +107,9 @@ network <-  R6::R6Class("network",
       wt_table <- dplyr::summarize(wt_table, g_e_intern = sum(g_e))
       g_e_intern <- split(wt_table$g_e_intern, wt_table$lay_recv)
 
-      #cat("g_e_intern in network: ", g_e_intern, "\n")
       # for unclamped layers
       # if the layer is not clamped, run cycle with inputs
       cycle_non_clamp <- function(lay, g_e_intern, ext_input, lay_clamped){
-        cat("g_e_intern in cycle_non_clamp: ", g_e_intern, "\n")
         if (lays_clamped$clamped) lay$cycle(g_e_intern, ext_input)
       }
       self$lays <- Map(cycle_non_clamp, self$lays, g_e_intern, ext_inputs,

@@ -49,7 +49,8 @@ ext_inputs <- ext_inputs[ext_inputs$input == 1,]
 self <- net
 nxx1_df <- create_nxx1()
 # go through all inputs
-net$cycle(ext_inputs, clamp_inp = 1)
+
+for (i in seq(700)) net$cycle(ext_inputs, clamp_inp = 1)
 
 ## 4) Let's create some inputs
 n_inputs <- 5  # number of input-output patterns to associate

@@ -69,8 +69,6 @@ unit <- R6::R6Class("unit",
 
 
       # finding whether there's an action potential
-      cat("private$v_m = ", private$v_m, "\n")
-      cat("private$i_net_h = ", private$i_net_h, "\n")
       if (private$v_m > private$spk_thr){
         private$spike <- 1
         private$v_m <- private$v_m_r

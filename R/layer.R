@@ -22,7 +22,7 @@ layer <- R6::R6Class("layer",
   #public ----------------------------------------------------------------------
   public = list(
     # constructor
-    initialize = function(dims, g_i_gain = 2){
+    initialize = function(dims, g_i_gain = 2, layer){
       if (length(c(dims)) == 2){
         self$n <- prod(dims)
         unit1 <- unit$new()
@@ -31,6 +31,7 @@ layer <- R6::R6Class("layer",
       } else{
         stop("dims argument should be of the type c(rows, columns)")
       }
+      self$layer <- layer
       # recip_avg_act_n is initialized with number of units that are > 0.4
       # (n_act_lrgr_forty)
       private$avg_act_inert <- self$avg_act
@@ -53,7 +54,7 @@ layer <- R6::R6Class("layer",
     #' @rdname layer
     get_unit_scaled_acts = function(){
       data.frame(act_scaled = private$recip_avg_act_n * self$get_unit_acts(),
-                 u_id = 1:self$n)
+                 u_id = 1:self$n, layer = self$layer)
     },
     #' cycle iterates one time step with layer object
     #'
@@ -65,7 +66,8 @@ layer <- R6::R6Class("layer",
     #'   activation value when layers are clamped
     #' @rdname layer
     cycle = function(g_e_intern, ext_input = NULL){
-      cat("g_e_intern: ", g_e_intern, "\n")
+      # otherwise adding does not work
+      ext_input <- ifelse(is.na(ext_input), 0, ext_input)
       ## obtaining the g_e_per_unit
       g_e_per_unit <- g_e_intern # contrast enhanced weights are used
       if (!isempty(ext_input)) g_e_per_unit <- g_e_per_unit + ext_input
@@ -78,7 +80,6 @@ layer <- R6::R6Class("layer",
       ## calling the cycle method for all units
       # todo: split cycle function, so that nxx1 call can be done with a
       # functional, much faster!
-      cat("g_e_per_unit: ", g_e_per_unit, "\n")
       Map(function(x, y, z) x$cycle(y, z), self$units, g_e_per_unit, g_i)
       invisible(self)
     },
@@ -180,7 +181,8 @@ layer <- R6::R6Class("layer",
     wt = NULL,         # An NxI weights matrix, where the n-th row has the
     # current wt values for all inputs coming to the n-th unit
     ce_wt = NULL,      # contrast-enhanced version of wt. ce_wt = SIG(wt).
-    units = NULL        # an array with all the unit objs of the layer
+    units = NULL,        # an array with all the unit objs of the layer
+    layer = NULL # number of layer
   ),
   # private --------------------------------------------------------------------
   private = list(
