@@ -105,7 +105,7 @@ for (epoch in seq(n_epochs)) {
       # minus cycles: layer 1 is clamped
       net$cycle(inputs, clamp_inp = 1)
     }
-    outs <- net$lays[[3]]$get_acts() # saving the output for testing
+    outs <- net$lays[[3]]$get_unit_acts() # saving the output for testing
 
     #+++++++ PLUS PHASE +++++++
     inputs <- list(unlist(patterns[pat, 1]), c(), unlist(patterns[pat, 2]))

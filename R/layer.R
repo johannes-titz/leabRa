@@ -114,9 +114,13 @@ layer <- R6::R6Class("layer",
       avg_l_lrn <- avg_l_lrn_min + self$get_unit_avg_l_prc() *
         (avg_l_lrn_max - avg_l_lrn_min)
 
-      data.frame(unit_id = 1:length(avg_s), "avg_s" = avg_s, "avg_m" = avg_m,
-                 "avg_l" = avg_l, "avg_s_with_m" = avg_s_with_m,
-                 "avg_l_lrn" = avg_l_lrn)
+      list(
+        "avg_s" = avg_s,
+        "avg_m" = avg_m,
+        "avg_l" = avg_l,
+        "avg_s_with_m" = avg_s_with_m,
+        "avg_l_lrn" = avg_l_lrn
+      )
     },
 
     #' get_unit_avg_l_prc returns the percentage value of avg_l in the

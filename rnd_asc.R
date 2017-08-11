@@ -14,7 +14,7 @@ cosine <- function(x, y){
 # point, layers are either fully connected or unconnected
 
 # 1.1) Set the dimensions of the layers specifying 3 layers and their dimensions
-dim_lays <- list(c(1, 5), c(1, 10), c(1, 5))
+dim_lays <- list(c(1, 5), c(2, 5), c(1, 5))
 
 # 1.2) Specify connectivity between layers
 cxn <- matrix(c(0, 0, 0,
@@ -102,7 +102,7 @@ for (epoch in seq(n_epochs)) {
             # minus cycles: layer 1 is clamped
             net$cycle(inputs, clamp_inp = 1)
         }
-        outs <- net$lays[[3]]$get_acts() # saving the output for testing
+        outs <- net$lays[[3]]$get_unit_acts() # saving the output for testing
 
         #+++++++ PLUS PHASE +++++++
         inputs <- list(unlist(patterns[pat, 1]), c(), unlist(patterns[pat, 2]))

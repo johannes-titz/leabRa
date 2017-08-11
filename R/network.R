@@ -191,7 +191,7 @@ network <-  R6::R6Class("network",
       }
 
       # We make a copy of the scaled activity for all layers
-      scaled_acts <- lapply(self$lays, function(x) x$get_scaled_acts())
+      scaled_acts <- lapply(self$lays, function(x) x$get_unit_scaled_acts())
 
       ## For each unclamped layer, we put all its scaled ext_inputs in one
       #  column vector, and call its cycle function with that vector
@@ -226,13 +226,13 @@ network <-  R6::R6Class("network",
     #' @rdname network
     chg_wt = function(){
       # updating the long-term averages
-      self$lays <- lapply(self$lays, function(x) x$updt_avg_l())
+      self$lays <- lapply(self$lays, function(x) x$updt_unit_avg_l())
 
       ## Extracting the averages for all layers
-      avgs <- lapply(self$lays, function(x) x$get_act_avgs(private$m_in_s, private$avg_l_lrn_min, private$avg_l_lrn_max))
+      avgs <- lapply(self$lays, function(x) x$get_unit_act_avgs(private$m_in_s, private$avg_l_lrn_min, private$avg_l_lrn_max))
       avg_l <- lapply(avgs, function(x) x$avg_l)
       avg_m <- lapply(avgs, function(x) x$avg_m)
-      avg_s_eff <- lapply(avgs, function(x) x$avg_s_eff)
+      avg_s_with_m <- lapply(avgs, function(x) x$avg_s_with_m)
       avg_l_lrn <- lapply(avgs, function(x) x$avg_l_lrn)
 
       ## For each connection matrix, calculate the intermediate vars.
@@ -253,8 +253,8 @@ network <-  R6::R6Class("network",
         m_mapply(function(x, y) x * y, cxn_b_null, avg)
       }
 
-      avg_s_eff_snd <- get_snd(avg_s_eff, cxn_b_null)
-      avg_s_eff_rcv <- get_rcv(avg_s_eff, cxn_b_null)
+      avg_s_with_m_snd <- get_snd(avg_s_with_m, cxn_b_null)
+      avg_s_with_m_rcv <- get_rcv(avg_s_with_m, cxn_b_null)
       avg_m_snd <- get_snd(avg_m, cxn_b_null)
       avg_m_rcv <- get_rcv(avg_m, cxn_b_null)
 
@@ -262,7 +262,7 @@ network <-  R6::R6Class("network",
       avg_l_rcv <- get_rcv(avg_l, cxn_b_null)
       avg_l_lrn_rcv <- get_rcv(avg_l_lrn, cxn_b_null)
 
-      s_hebb <- m_mapply(function(x, y) x %o% y, avg_s_eff_rcv, avg_s_eff_snd)
+      s_hebb <- m_mapply(function(x, y) x %o% y, avg_s_with_m_rcv, avg_s_with_m_snd)
       m_hebb <- m_mapply(function(x, y) x %o% y, avg_m_rcv, avg_m_snd)
 
       # this is independent of sending; only the receiving neuron's long term
