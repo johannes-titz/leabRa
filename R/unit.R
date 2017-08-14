@@ -18,8 +18,8 @@ NULL
 #'   to other units, think of it as a percentage of how many neurons are active
 #'   in a microcolumn of 100 neurons
 #' @field g_e excitatory conductance, asymptotically approaches g_e_raw (see cycle method), aka net input
-#' @field v_m membrane potential in the range between 0 and 2, 0 is -100mV, 2 is 100mV, thus 1 is 0mV (v_m should usually be between 0 and 1)
-#' @field v_m_eq equilibrium membrane potential, which is not reset by spikes, it just
+#' @field v membrane potential in the range between 0 and 2, 0 is -100mV, 2 is 100mV, thus 1 is 0mV (v should usually be between 0 and 1)
+#' @field v_eq equilibrium membrane potential, which is not reset by spikes, it just
 #' keeps integrating
 #' @field spike a flag that indicates spiking threshold was crossed
 #' @field i_adapt adaptation current
@@ -66,52 +66,52 @@ unit <- R6::R6Class("unit",
 
       ## Finding membrane potential
       # excitatory, inhibitory and leak current
-      i_e <- private$g_e * (private$v_rev_e - private$v_m)
-      i_i <- g_i * (private$v_rev_i - private$v_m)
-      i_l <- private$g_l * (private$v_rev_l - private$v_m)
+      i_e <- private$g_e * (private$v_rev_e - private$v)
+      i_i <- g_i * (private$v_rev_i - private$v)
+      i_l <- private$g_l * (private$v_rev_l - private$v)
       i_net <- i_e + i_i + i_l
 
-      # almost half-step method for updating v_m (i_adapt doesn't half step)
-      v_m_h <- private$v_m + 0.5 * private$cyc_dt * private$v_m_dt *
+      # almost half-step method for updating v (i_adapt doesn't half step)
+      v_h <- private$v + 0.5 * private$cyc_dt * private$v_dt *
         (i_net - private$i_adapt)
-      i_e_h <- private$g_e * (private$v_rev_e - v_m_h)
-      i_i_h <- g_i * (private$v_rev_i - v_m_h)
-      i_l_h <- private$g_l * (private$v_rev_l - v_m_h)
+      i_e_h <- private$g_e * (private$v_rev_e - v_h)
+      i_i_h <- g_i * (private$v_rev_i - v_h)
+      i_l_h <- private$g_l * (private$v_rev_l - v_h)
       i_net_h <- i_e_h + i_i_h + i_l_h
 
-      private$v_m <- private$v_m + private$cyc_dt * private$v_m_dt *
+      private$v <- private$v + private$cyc_dt * private$v_dt *
         (i_net_h - private$i_adapt)
-      private$v_m_eq <- private$v_m_eq + private$cyc_dt * private$v_m_dt *
+      private$v_eq <- private$v_eq + private$cyc_dt * private$v_dt *
         (i_net_h - private$i_adapt)
 
       ## Finding activation
       # finding threshold excitatory conductance
-      g_e_thr <- (g_i * (private$v_rev_i - private$v_m_thr) +
-                    private$g_l * (private$v_rev_l - private$v_m_thr) -
-                    private$i_adapt) / (private$v_m_thr - private$v_rev_e)
+      g_e_thr <- (g_i * (private$v_rev_i - private$v_thr) +
+                    private$g_l * (private$v_rev_l - private$v_thr) -
+                    private$i_adapt) / (private$v_thr - private$v_rev_e)
 
       # finding whether there's an action potential
-      if (private$v_m > private$spk_thr){
+      if (private$v > private$spk_thr){
         private$spike <- 1
-        private$v_m <- private$v_m_r
+        private$v <- private$v_r
       }  else {
         private$spike <- 0
       }
 
       # finding instantaneous rate due to input
-      if (private$v_m_eq <= private$v_m_thr){
-        new_act <- private$nxx1(private$v_m_eq - private$v_m_thr)
+      if (private$v_eq <= private$v_thr){
+        new_act <- private$nxx1(private$v_eq - private$v_thr)
       } else {
         new_act <- private$nxx1(private$g_e - g_e_thr)
       }
 
       # update activity
-      self$act <- self$act + private$cyc_dt * private$v_m_dt *
+      self$act <- self$act + private$cyc_dt * private$v_dt *
         (new_act - self$act)
 
       ## Updating adaptation current
       private$i_adapt <- private$i_adapt + private$cyc_dt *
-        (private$i_adapt_dt * (private$v_m_gain * (private$v_m - private$v_rev_l)
+        (private$i_adapt_dt * (private$v_gain * (private$v - private$v_rev_l)
                             - private$i_adapt) + private$spike * private$spike_gain)
 
       private$update_averages()
@@ -151,8 +151,8 @@ unit <- R6::R6Class("unit",
       self$avg_m <- self$act
       self$avg_l <- self$act
       private$g_e <- 0
-      private$v_m <- 0.3
-      private$v_m_eq <- 0.3
+      private$v <- 0.3
+      private$v_eq <- 0.3
       private$i_adapt <- 0
       private$spike <- 0
       invisible(self)
@@ -191,14 +191,14 @@ unit <- R6::R6Class("unit",
     # dynamic values
     g_e = 0,
     avg_ss = 0.2,
-    v_m = 0.3,
-    v_m_eq = 0.3,
+    v = 0.3,
+    v_eq = 0.3,
     i_adapt = 0,
     spike = 0,
     # constant values
     g_e_dt = 1 / 1.4,   # time step constant for update of "g_e"
     cyc_dt = 1,       # time step constant for integration of cycle dynamics
-    v_m_dt = 1 / 3.3,   # time step constant for membrane potential
+    v_dt = 1 / 3.3,   # time step constant for membrane potential
     l_dn_dt = 1 / 2.5,  # time step constant for avg_l decrease
     i_adapt_dt = 1 / 144, # time step constant for adaptation
     ss_dt = 0.5,        # time step for super-short average
@@ -211,11 +211,11 @@ unit <- R6::R6Class("unit",
     v_rev_i = .25,      # inhibitory reversal potential
     v_rev_l = 0.3,      # leak reversal potential
     g_l = 0.1,         # leak conductance
-    v_m_thr = 0.5,      # normalized "rate threshold", -50mV (0: -100mV,
+    v_thr = 0.5,      # normalized "rate threshold", -50mV (0: -100mV,
     # 2: 100mV)
     spk_thr = 1.2,      # normalized spike threshold
-    v_m_r = 0.3,        # reset membrane potential after spike
-    v_m_gain = 0.04,    # gain that voltage produces on adaptation
+    v_r = 0.3,        # reset membrane potential after spike
+    v_gain = 0.04,    # gain that voltage produces on adaptation
     spike_gain = 0.00805, # effect of spikes on adaptation
     l_up_inc = 0.2      # increase in avg_l if avg_m has been "large"
   )
