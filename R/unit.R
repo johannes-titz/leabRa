@@ -93,7 +93,7 @@ unit <- R6::R6Class("unit",
       # finding whether there's an action potential
       if (private$v > private$spk_thr){
         private$spike <- 1
-        private$v <- private$v_r
+        private$v <- private$v_reset
       }  else {
         private$spike <- 0
       }
@@ -112,7 +112,7 @@ unit <- R6::R6Class("unit",
       ## Updating adaptation current
       private$i_adapt <- private$i_adapt + private$cyc_dt *
         (private$i_adapt_dt * (private$v_gain * (private$v - private$v_rev_l)
-                            - private$i_adapt) + private$spike * private$spike_gain)
+                            - private$i_adapt) + private$spike * private$spike_gain_adapt)
 
       private$update_averages()
       invisible(self)
@@ -195,26 +195,27 @@ unit <- R6::R6Class("unit",
     v_eq = 0.3,
     i_adapt = 0,
     spike = 0,
-    # constant values
-    g_e_dt = 1 / 1.4,   # time step constant for update of "g_e"
-    cyc_dt = 1,       # time step constant for integration of cycle dynamics
-    v_dt = 1 / 3.3,   # time step constant for membrane potential
-    i_adapt_dt = 1 / 144, # time step constant for adaptation
-    ss_dt = 0.5,        # time step for super-short average
-    s_dt = 0.5,         # time step for short average
-    m_dt = 0.1,         # time step for medium-term average
-    avg_l_dt = 0.1,     # time step for long-term average
-    avg_l_max = 1.5,    # max value of avg_l; why can this be larger than 1?----
-    avg_l_min = 0.1,    # min value of avg_l
-    v_rev_e = 1,        # excitatory reversal potential
-    v_rev_i = .25,      # inhibitory reversal potential
-    v_rev_l = 0.3,      # leak reversal potential
-    g_l = 0.1,         # leak conductance
-    v_thr = 0.5,      # normalized "rate threshold", -50mV (0: -100mV,
-    # 2: 100mV)
-    spk_thr = 1.2,      # normalized spike threshold
-    v_r = 0.3,        # reset membrane potential after spike
-    v_gain = 0.04,    # gain that voltage produces on adaptation
-    spike_gain = 0.00805 # effect of spikes on adaptation
+  # constant values
+  # time step constants
+  g_e_dt = 1 / 1.4,     # time step constant for update of "g_e"
+  cyc_dt = 1,           # time step constant for integration of cycle dynamics
+  v_dt = 1 / 3.3,       # time step constant for membrane potential
+  i_adapt_dt = 1 / 144, # time step constant for adaptation
+  ss_dt = 0.5,          # time step constant for super-short average
+  s_dt = 0.5,           # time step constant for short average
+  m_dt = 0.1,           # time step constant for medium-term average
+  avg_l_dt = 0.1,       # time step constant for long-term average
+  # other
+  avg_l_max = 1.5,      # max value of avg_l
+  avg_l_min = 0.1,      # min value of avg_l
+  v_rev_e = 1,          # excitatory reversal potential
+  v_rev_i = .25,        # inhibitory reversal potential
+  v_rev_l = 0.3,        # leak reversal potential
+  g_l = 0.1,            # leak conductance
+  v_thr = 0.5,          # normalized "rate threshold", corresponds with -50mV
+  spk_thr = 1.2,        # normalized spike threshold
+  v_reset= 0.3,         # reset membrane potential after spike
+  v_gain = 0.04,        # gain that voltage produces on adaptation
+  spike_gain_adapt = 0.00805 # effect of spikes on adaptation
   )
 )
