@@ -3,7 +3,7 @@ NULL
 
 #' Class to simulate a biologically realistic neuron
 #'
-#' This class simulates a biologically realistic neuron in the lebra framework. A layer has the field "units", which is a list of unit objects.
+#' This class simulates a biologically realistic neuron in the lebra framework. When you use a layer class, you will see that a layer object has a variable (field) \code{units}, which is a list of unit objects.
 #'
 #' @docType class
 #' @importFrom R6 R6Class
@@ -13,43 +13,40 @@ NULL
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
-#' unit$new()
-#' unit$cycle()
+#' u <- unit$new()
+#' print(u) # a lot of private values
+#' # let us clamp the activation to 0.7
+#' u$act
+#' u$clamp_cycle(0.7)
+#' c(u$act, u$avg_s, u$avg_m, u$avg_l, u$avg_l_prc) # avg_l was not updated,
+#' this only happens before the weights are changed
+#' u$updt_avg_l() # let us update it
+#' c(u$act, u$avg_s, u$avg_m, u$avg_l, u$avg_l_prc)
+#' # let us run 10 cycles with unclamped activation and output the activation
+#' # produced because of changes in conductance
+#' cycle_number <- 1:10
+#' lapply(cycle_number, function(x)
+#'        cat("cycle ", x, " ", u$cycle(g_e_raw = 0.5, g_i = 0.5)$act)
 #'
 #' @field act percentage activation ("firing rate") of the unit, which is sent
 #'   to other units, think of it as a percentage of how many neurons are active
 #'   in a microcolumn of 100 neurons
-#' @field g_e excitatory conductance, asymptotically approaches g_e_raw (see
-#'   cycle method), aka net input
-#' @field v membrane potential in the range between 0 and 2, 0 is -100mV, 2 is
-#'   100mV, thus 1 is 0mV (v should usually be between 0 and 1)
-#' @field v_eq equilibrium membrane potential, which is not reset by spikes, it
-#'   just keeps integrating
-#' @field spike a flag that indicates spiking threshold was crossed
-#' @field i_adapt adaptation current like in the AdEx model
-#' @field avg_ss super short-term running average activation, integrates over
-#'   act
 #' @field avg_s short-term running average activation, integrates over avg_ss,
 #'   represents plus phase learning signal
 #' @field avg_m medium-term running average activation, integrates over avg_s,
 #'   represents minus phase learning signal
 #' @field avg_l long-term running average activation, integrates over avg_m,
-#'   drives long-term floating average for self-organized learning learning
-#'@field avg_l_prc this is avg_l in percentage of minimum (default is 0.1) and maximum (default is 1.5)
+#'   drives long-term floating average for self-organized learning
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{Documentation}{For full documentation of each method go to https://github.com/lightning-viz/lightining-r/}
 #'   \item{\code{new()}}{Creates an object of this class with default parameters.}
 #'
 #'   \item{\code{cycle(g_e_raw, g_i)}}{Cycles 1 ms with given excitatory conductance  \code{g_e_raw} and inhibitory conductance \code{g_i}. Excitatory conductance depends on the weights to other units and the activity of those other units. Inhibitory conductance depends on feedforward and feedback inhibition. See layer cycle method.}
 #'
 #'   \item{\code{clamp_cycle(activation)}}{Clamps the value of \code{activation} to the \code{act} variable of the unit without any time integration. Then updates averages. This is usually done when presenting external input.}
 #'
-#'   \item{\code{updt_avg_l()}}{This method updates the variable \code{avg_l}. This usually happens before the weights are changed in the network (after the plus phase), and not every cycle. It tends to move towards a constant minium avg_l (0.1) if avg_m is smaller than 0.2; if it is larger, than it will tend to go to avg_m}
-#'
-#'   \item{\code{nxx1(x)}}{Calculates the activation of a unit as a function of v or g_e and their thresholds}}
-
+#'   \item{\code{updt_avg_l()}}{This method updates the variable \code{avg_l}. This usually happens before the weights are changed in the network (after the plus phase), and not every cycle. It tends to move towards a constant minium avg_l (0.1) if avg_m is smaller than 0.2; if it is larger, than it will tend to go to maximum avg_l (1.5)}}
 unit <- R6::R6Class("unit",
   # public ---------------------------------------------------------------------
   public = list(
@@ -158,6 +155,7 @@ unit <- R6::R6Class("unit",
     }
   ),
   # private --------------------------------------------------------------------
+  # \item{\code{nxx1(x)}}{Calculates the activation of a unit as a function of v or g_e and their thresholds}}
   private = list(
     nxx1 = function(x){
       # nxx1_df is a df that is used as a lookup-table, it is stored internally
@@ -176,7 +174,7 @@ unit <- R6::R6Class("unit",
     invisible(self)
     },
   # fields ---------------------------------------------------------------------
-    # dynamic values
+  # dynamic values
   avg_ss = 0.2,
   g_e = 0,
   v = 0.3,
