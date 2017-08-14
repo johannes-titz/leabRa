@@ -61,48 +61,48 @@ unit <- R6::R6Class("unit",
   public = list(
     cycle = function(g_e_raw, g_i){
       ## updating g_e input
-      private$g_e <- private$g_e + private$cyc_dt * private$g_e_dt *
-        (g_e_raw - private$g_e)
+      self$g_e <- self$g_e + private$cyc_dt * private$g_e_dt *
+        (g_e_raw - self$g_e)
 
       ## Finding membrane potential
       # excitatory, inhibitory and leak current
-      i_e <- private$g_e * (private$v_rev_e - private$v)
-      i_i <- g_i * (private$v_rev_i - private$v)
-      i_l <- private$g_l * (private$v_rev_l - private$v)
+      i_e <- self$g_e * (private$v_rev_e - self$v)
+      i_i <- g_i * (private$v_rev_i - self$v)
+      i_l <- private$g_l * (private$v_rev_l - self$v)
       i_net <- i_e + i_i + i_l
 
       # almost half-step method for updating v (i_adapt doesn't half step)
-      v_h <- private$v + 0.5 * private$cyc_dt * private$v_dt *
-        (i_net - private$i_adapt)
-      i_e_h <- private$g_e * (private$v_rev_e - v_h)
+      v_h <- self$v + 0.5 * private$cyc_dt * private$v_dt *
+        (i_net - self$i_adapt)
+      i_e_h <- self$g_e * (private$v_rev_e - v_h)
       i_i_h <- g_i * (private$v_rev_i - v_h)
       i_l_h <- private$g_l * (private$v_rev_l - v_h)
       i_net_h <- i_e_h + i_i_h + i_l_h
 
-      private$v <- private$v + private$cyc_dt * private$v_dt *
-        (i_net_h - private$i_adapt)
-      private$v_eq <- private$v_eq + private$cyc_dt * private$v_dt *
-        (i_net_h - private$i_adapt)
+      self$v <- self$v + private$cyc_dt * private$v_dt *
+        (i_net_h - self$i_adapt)
+      self$v_eq <- self$v_eq + private$cyc_dt * private$v_dt *
+        (i_net_h - self$i_adapt)
 
       ## Finding activation
       # finding threshold excitatory conductance
       g_e_thr <- (g_i * (private$v_rev_i - private$v_thr) +
                     private$g_l * (private$v_rev_l - private$v_thr) -
-                    private$i_adapt) / (private$v_thr - private$v_rev_e)
+                    self$i_adapt) / (private$v_thr - private$v_rev_e)
 
       # finding whether there's an action potential
-      if (private$v > private$spk_thr){
-        private$spike <- 1
-        private$v <- private$v_reset
+      if (self$v > private$spk_thr){
+        self$spike <- 1
+        self$v <- private$v_reset
       }  else {
-        private$spike <- 0
+        self$spike <- 0
       }
 
       # finding instantaneous rate due to input
-      if (private$v_eq <= private$v_thr){
-        new_act <- private$nxx1(private$v_eq - private$v_thr)
+      if (self$v_eq <= private$v_thr){
+        new_act <- private$nxx1(self$v_eq - private$v_thr)
       } else {
-        new_act <- private$nxx1(private$g_e - g_e_thr)
+        new_act <- private$nxx1(self$g_e - g_e_thr)
       }
 
       # update activity
@@ -110,9 +110,9 @@ unit <- R6::R6Class("unit",
         (new_act - self$act)
 
       ## Updating adaptation current
-      private$i_adapt <- private$i_adapt + private$cyc_dt *
-        (private$i_adapt_dt * (private$v_gain * (private$v - private$v_rev_l)
-                            - private$i_adapt) + private$spike * private$spike_gain_adapt)
+      self$i_adapt <- self$i_adapt + private$cyc_dt *
+        (private$i_adapt_dt * (private$v_gain * (self$v - private$v_rev_l)
+                            - self$i_adapt) + self$spike * private$spike_gain_adapt)
 
       private$update_averages()
       invisible(self)
@@ -150,11 +150,11 @@ unit <- R6::R6Class("unit",
       self$avg_s <- self$act
       self$avg_m <- self$act
       self$avg_l <- self$act
-      private$g_e <- 0
-      private$v <- 0.3
-      private$v_eq <- 0.3
-      private$i_adapt <- 0
-      private$spike <- 0
+      self$g_e <- 0
+      self$v <- 0.3
+      self$v_eq <- 0.3
+      self$i_adapt <- 0
+      self$spike <- 0
       invisible(self)
     },
     # fields -------------------------------------------------------------------
@@ -162,7 +162,12 @@ unit <- R6::R6Class("unit",
     avg_s = 0.2,
     avg_m = 0.2,
     avg_l = 0.2,
-    avg_ss = 0.2
+    avg_ss = 0.2,
+    g_e = 0,
+    v = 0.3,
+    v_eq = 0.3,
+    i_adapt = 0,
+    spike = 0
   ),
   # active ---------------------------------------------------------------------
   active = list(
@@ -190,11 +195,6 @@ unit <- R6::R6Class("unit",
     },
   # fields ---------------------------------------------------------------------
     # dynamic values
-    g_e = 0,
-    v = 0.3,
-    v_eq = 0.3,
-    i_adapt = 0,
-    spike = 0,
   # constant values
   # time step constants
   g_e_dt = 1 / 1.4,     # time step constant for update of "g_e"
