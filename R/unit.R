@@ -66,17 +66,17 @@ unit <- R6::R6Class("unit",
 
       ## Finding membrane potential
       # excitatory, inhibitory and leak current
-      i_e <- private$g_e * (private$e_rev_e - private$v_m)
-      i_i <- g_i * (private$e_rev_i - private$v_m)
-      i_l <- private$gc_l * (private$e_rev_l - private$v_m)
+      i_e <- private$g_e * (private$v_rev_e - private$v_m)
+      i_i <- g_i * (private$v_rev_i - private$v_m)
+      i_l <- private$gc_l * (private$v_rev_l - private$v_m)
       i_net <- i_e + i_i + i_l
 
       # almost half-step method for updating v_m (i_adapt doesn't half step)
       v_m_h <- private$v_m + 0.5 * private$cyc_dt * private$v_m_dt *
         (i_net - private$i_adapt)
-      i_e_h <- private$g_e * (private$e_rev_e - v_m_h)
-      i_i_h <- g_i * (private$e_rev_i - v_m_h)
-      i_l_h <- private$gc_l * (private$e_rev_l - v_m_h)
+      i_e_h <- private$g_e * (private$v_rev_e - v_m_h)
+      i_i_h <- g_i * (private$v_rev_i - v_m_h)
+      i_l_h <- private$gc_l * (private$v_rev_l - v_m_h)
       i_net_h <- i_e_h + i_i_h + i_l_h
 
       private$v_m <- private$v_m + private$cyc_dt * private$v_m_dt *
@@ -86,9 +86,9 @@ unit <- R6::R6Class("unit",
 
       ## Finding activation
       # finding threshold excitatory conductance
-      g_e_thr <- (g_i * (private$e_rev_i - private$v_m_thr) +
-                    private$gc_l * (private$e_rev_l - private$v_m_thr) -
-                    private$i_adapt) / (private$v_m_thr - private$e_rev_e)
+      g_e_thr <- (g_i * (private$v_rev_i - private$v_m_thr) +
+                    private$gc_l * (private$v_rev_l - private$v_m_thr) -
+                    private$i_adapt) / (private$v_m_thr - private$v_rev_e)
 
       # finding whether there's an action potential
       if (private$v_m > private$spk_thr){
@@ -111,7 +111,7 @@ unit <- R6::R6Class("unit",
 
       ## Updating adaptation current
       private$i_adapt <- private$i_adapt + private$cyc_dt *
-        (private$i_adapt_dt * (private$v_m_gain * (private$v_m - private$e_rev_l)
+        (private$i_adapt_dt * (private$v_m_gain * (private$v_m - private$v_rev_l)
                             - private$i_adapt) + private$spike * private$spike_gain)
 
       private$update_averages()
@@ -207,9 +207,9 @@ unit <- R6::R6Class("unit",
     avg_l_dt = 0.1,     # time step for long-term average
     avg_l_max = 1.5,    # max value of avg_l; why can this be larger than 1?----
     avg_l_min = 0.1,    # min value of avg_l
-    e_rev_e = 1,        # excitatory reversal potential
-    e_rev_i = .25,      # inhibitory reversal potential
-    e_rev_l = 0.3,      # leak reversal potential
+    v_rev_e = 1,        # excitatory reversal potential
+    v_rev_i = .25,      # inhibitory reversal potential
+    v_rev_l = 0.3,      # leak reversal potential
     gc_l = 0.1,         # leak conductance
     v_m_thr = 0.5,      # normalized "rate threshold", -50mV (0: -100mV,
     # 2: 100mV)
