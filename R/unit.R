@@ -68,7 +68,7 @@ unit <- R6::R6Class("unit",
       # excitatory, inhibitory and leak current
       i_e <- private$g_e * (private$v_rev_e - private$v_m)
       i_i <- g_i * (private$v_rev_i - private$v_m)
-      i_l <- private$gc_l * (private$v_rev_l - private$v_m)
+      i_l <- private$g_l * (private$v_rev_l - private$v_m)
       i_net <- i_e + i_i + i_l
 
       # almost half-step method for updating v_m (i_adapt doesn't half step)
@@ -76,7 +76,7 @@ unit <- R6::R6Class("unit",
         (i_net - private$i_adapt)
       i_e_h <- private$g_e * (private$v_rev_e - v_m_h)
       i_i_h <- g_i * (private$v_rev_i - v_m_h)
-      i_l_h <- private$gc_l * (private$v_rev_l - v_m_h)
+      i_l_h <- private$g_l * (private$v_rev_l - v_m_h)
       i_net_h <- i_e_h + i_i_h + i_l_h
 
       private$v_m <- private$v_m + private$cyc_dt * private$v_m_dt *
@@ -87,7 +87,7 @@ unit <- R6::R6Class("unit",
       ## Finding activation
       # finding threshold excitatory conductance
       g_e_thr <- (g_i * (private$v_rev_i - private$v_m_thr) +
-                    private$gc_l * (private$v_rev_l - private$v_m_thr) -
+                    private$g_l * (private$v_rev_l - private$v_m_thr) -
                     private$i_adapt) / (private$v_m_thr - private$v_rev_e)
 
       # finding whether there's an action potential
@@ -210,7 +210,7 @@ unit <- R6::R6Class("unit",
     v_rev_e = 1,        # excitatory reversal potential
     v_rev_i = .25,      # inhibitory reversal potential
     v_rev_l = 0.3,      # leak reversal potential
-    gc_l = 0.1,         # leak conductance
+    g_l = 0.1,         # leak conductance
     v_m_thr = 0.5,      # normalized "rate threshold", -50mV (0: -100mV,
     # 2: 100mV)
     spk_thr = 1.2,      # normalized spike threshold
