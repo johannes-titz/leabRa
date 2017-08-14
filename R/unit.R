@@ -199,7 +199,6 @@ unit <- R6::R6Class("unit",
     g_e_dt = 1 / 1.4,   # time step constant for update of "g_e"
     cyc_dt = 1,       # time step constant for integration of cycle dynamics
     v_dt = 1 / 3.3,   # time step constant for membrane potential
-    l_dn_dt = 1 / 2.5,  # time step constant for avg_l decrease
     i_adapt_dt = 1 / 144, # time step constant for adaptation
     ss_dt = 0.5,        # time step for super-short average
     s_dt = 0.5,         # time step for short average
@@ -216,7 +215,6 @@ unit <- R6::R6Class("unit",
     spk_thr = 1.2,      # normalized spike threshold
     v_r = 0.3,        # reset membrane potential after spike
     v_gain = 0.04,    # gain that voltage produces on adaptation
-    spike_gain = 0.00805, # effect of spikes on adaptation
-    l_up_inc = 0.2      # increase in avg_l if avg_m has been "large"
+    spike_gain = 0.00805 # effect of spikes on adaptation
   )
 )
