@@ -146,7 +146,7 @@ unit <- R6::R6Class("unit",
       ifelse(random == T, self$act <- 0.05 + 0.9 * runif(1),
              self$act <- 0)
       # does this influence pct_act_rel?
-      private$avg_ss <- self$act
+      self$avg_ss <- self$act
       self$avg_s <- self$act
       self$avg_m <- self$act
       self$avg_l <- self$act
@@ -161,7 +161,8 @@ unit <- R6::R6Class("unit",
     act = 0.2,
     avg_s = 0.2,
     avg_m = 0.2,
-    avg_l = 0.2
+    avg_l = 0.2,
+    avg_ss = 0.2
   ),
   # active ---------------------------------------------------------------------
   active = list(
@@ -179,10 +180,10 @@ unit <- R6::R6Class("unit",
     },
 
     update_averages = function(){
-    private$avg_ss <- private$avg_ss + private$cyc_dt * private$ss_dt *
-      (self$act - private$avg_ss)
+    self$avg_ss <- self$avg_ss + private$cyc_dt * private$ss_dt *
+      (self$act - self$avg_ss)
     self$avg_s <- self$avg_s + private$cyc_dt * private$s_dt *
-      (private$avg_ss - self$avg_s)
+      (self$avg_ss - self$avg_s)
     self$avg_m <- self$avg_m + private$cyc_dt * private$m_dt *
       (self$avg_s - self$avg_m)
     invisible(self)
@@ -190,7 +191,6 @@ unit <- R6::R6Class("unit",
   # fields ---------------------------------------------------------------------
     # dynamic values
     g_e = 0,
-    avg_ss = 0.2,
     v = 0.3,
     v_eq = 0.3,
     i_adapt = 0,
