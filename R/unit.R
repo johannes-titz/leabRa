@@ -59,7 +59,7 @@ NULL
 unit <- R6::R6Class("unit",
   # public ---------------------------------------------------------------------
   public = list(
-    cycle = function(g_e_raw, gc_i){
+    cycle = function(g_e_raw, g_i){
       ## updating g_e input
       private$g_e <- private$g_e + private$cyc_dt * private$g_e_dt *
         (g_e_raw - private$g_e)
@@ -67,7 +67,7 @@ unit <- R6::R6Class("unit",
       ## Finding membrane potential
       # excitatory, inhibitory and leak current
       i_e <- private$g_e * (private$e_rev_e - private$v_m)
-      i_i <- gc_i * (private$e_rev_i - private$v_m)
+      i_i <- g_i * (private$e_rev_i - private$v_m)
       i_l <- private$gc_l * (private$e_rev_l - private$v_m)
       i_net <- i_e + i_i + i_l
 
@@ -75,7 +75,7 @@ unit <- R6::R6Class("unit",
       v_m_h <- private$v_m + 0.5 * private$cyc_dt * private$v_m_dt *
         (i_net - private$i_adapt)
       i_e_h <- private$g_e * (private$e_rev_e - v_m_h)
-      i_i_h <- gc_i * (private$e_rev_i - v_m_h)
+      i_i_h <- g_i * (private$e_rev_i - v_m_h)
       i_l_h <- private$gc_l * (private$e_rev_l - v_m_h)
       i_net_h <- i_e_h + i_i_h + i_l_h
 
@@ -86,7 +86,7 @@ unit <- R6::R6Class("unit",
 
       ## Finding activation
       # finding threshold excitatory conductance
-      g_e_thr <- (gc_i * (private$e_rev_i - private$v_m_thr) +
+      g_e_thr <- (g_i * (private$e_rev_i - private$v_m_thr) +
                     private$gc_l * (private$e_rev_l - private$v_m_thr) -
                     private$i_adapt) / (private$v_m_thr - private$e_rev_e)
 
