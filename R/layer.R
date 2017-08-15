@@ -31,6 +31,9 @@ layer <- R6::R6Class("layer",
       } else{
         stop("dims argument should be of the type c(rows, columns)")
       }
+      # set the number of the unit in layer
+      Map(function(x, y) x$unit_number <- y, self$units, 1:self$n)
+
       # recip_avg_act_n is initialized with number of units that are > 0.4
       # (n_act_lrgr_forty)
       private$avg_act_inert <- self$avg_act
