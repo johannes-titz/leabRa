@@ -13,25 +13,40 @@ NULL
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
-#' u <- unit$new()
+#' u <- unit$new() # creates a new unit with default leabra values
+#'
 #' print(u) # a lot of private values
+#' u$v # private values cannot be accessed
+#' # if you want to see alle variables, you need to use the function
+#' u$get_vars(show_dynamics = T, show_constants = T)
+#'
 #' # let us clamp the activation to 0.7
 #' u$act
 #' u$clamp_cycle(0.7)
-#' c(u$act, u$avg_s, u$avg_m, u$avg_l, u$avg_l_prc) # avg_l was not updated,
-#' this only happens before the weights are changed
-#' u$updt_avg_l() # let us update it
 #' c(u$act, u$avg_s, u$avg_m, u$avg_l, u$avg_l_prc)
+#' # act is indeed 0.7, but avg_l was not updated, this only happens before the
+#' # weights are changed, let us update it now
+#' u$updt_avg_l()
+#' c(u$act, u$avg_s, u$avg_m, u$avg_l, u$avg_l_prc)
+#' # seems to work
+#'
 #' # let us run 10 cycles with unclamped activation and output the activation
 #' # produced because of changes in conductance
+#' u <- unit$new()
 #' cycle_number <- 1:10
-#' lapply(cycle_number, function(x)
-#'        cat("cycle ", x, " ", u$cycle(g_e_raw = 0.5, g_i = 0.5)$act)
+#' result <- lapply(cycle_number, function(x)
+#'                  u$cycle(g_e_raw = 0.5, g_i = 0.5)$get_vars())
+#' # make a data frame out of the list
+#' result <- plyr::ldply(result)
+#' # plot act
+#' plot(result$act, type = "b", xlab = "cycle", ylab = "act")
+#' # add conductance g_e to plot, should approach g_e_raw
+#' lines(result$g_e, type = "b", col = "blue")
 #'
 #' @field act percentage activation ("firing rate") of the unit, which is sent
 #'   to other units, think of it as a percentage of how many neurons are active
 #'   in a microcolumn of 100 neurons
-#' @field avg_s short-term running average activation, integrates over avg_ss,
+#' @field avg_s short-term running average activation, integrates over avg_ss (a private variable, which integrates over act),
 #'   represents plus phase learning signal
 #' @field avg_m medium-term running average activation, integrates over avg_s,
 #'   represents minus phase learning signal
@@ -46,10 +61,15 @@ NULL
 #'
 #'   \item{\code{clamp_cycle(activation)}}{Clamps the value of \code{activation} to the \code{act} variable of the unit without any time integration. Then updates averages. This is usually done when presenting external input.}
 #'
-#'   \item{\code{updt_avg_l()}}{This method updates the variable \code{avg_l}. This usually happens before the weights are changed in the network (after the plus phase), and not every cycle. It tends to move towards a constant minium avg_l (0.1) if avg_m is smaller than 0.2; if it is larger, than it will tend to go to maximum avg_l (1.5)}}
+#'   \item{\code{updt_avg_l()}}{Updates the variable \code{avg_l}. This usually happens before the weights are changed in the network (after the plus phase), and not every cycle. If avg_m is smaller than 0.2 (or equal) avg_l tends to move towards the constant minium avg_l value (0.1). If avg_m is larger than 0.2, than avg_l will tend to go to the constant maximum avg_l value (1.5)}
+#'
+#'   \item{\code{get_vars(show_dynamics = T, show_constants = F)}}{Returns a data frame with 1 row with the current state of all the variables of the unit. You can choose whether you want dynamic values and / or constant values. This might be useful if you want to analyse what happens in a unit, which would otherwise not be possible, because most of the variables (fields) are private in this class.}}
 unit <- R6::R6Class("unit",
   # public ---------------------------------------------------------------------
   public = list(
+    initialize = function(){
+      private$nxx1_df <- create_nxx1()
+    },
     cycle = function(g_e_raw, g_i){
       ## updating g_e input
       private$g_e <- private$g_e + private$cyc_dt * private$g_e_dt *
@@ -118,10 +138,10 @@ unit <- R6::R6Class("unit",
 
     updt_avg_l = function(){
         if (self$avg_m > 0.2){
-          self$avg_l <- self$avg_l + private$avg_l_dt *
+          self$avg_l <- self$avg_l + private$l_dt *
             (private$avg_l_max - self$avg_m)
         } else{
-          self$avg_l <- self$avg_l + private$avg_l_dt *
+          self$avg_l <- self$avg_l + private$l_dt *
             (private$avg_l_min - self$avg_m)
         }
         invisible(self)
@@ -142,11 +162,55 @@ unit <- R6::R6Class("unit",
       private$spike <- 0
       invisible(self)
     },
+    # return a data frame with all variables
+    get_vars = function(show_dynamics = T, show_constants = F){
+      df <- data.frame(unit = self$unit_number)
+      dynamic_vars <- data.frame(
+        act = self$act,
+        avg_ss = private$avg_ss,
+        avg_s = self$avg_s,
+        avg_m = self$avg_m,
+        avg_l = self$avg_l,
+        avg_l_prc = self$avg_l_prc,
+        g_e = private$g_e,
+        v = private$v,
+        v_eq = private$v_eq,
+        i_adapt = private$i_adapt,
+        spike = private$spike
+      )
+      constant_vars <-
+        data.frame(
+          cyc_dt           = private$cyc_dt,
+          g_e_dt           = private$g_e_dt,
+          ss_dt            = private$ss_dt,
+          s_dt             = private$s_dt,
+          l_dt             = private$l_dt,
+          m_dt             = private$m_dt,
+          v_dt             = private$v_dt,
+          i_adapt_dt       = private$i_adapt_dt,
+          avg_l_max        = private$avg_l_max,
+          avg_l_min        = private$avg_l_min,
+          v_rev_e          = private$v_rev_e,
+          v_rev_l          = private$v_rev_l,
+          g_l              = private$g_l,
+          v_thr            = private$v_thr,
+          spk_thr          = private$spk_thr,
+          v_reset          = private$v_reset,
+          v_gain           = private$v_gain,
+          spike_gain_adapt = private$spike_gain_adapt
+        )
+      if (show_dynamics == T) df <- cbind(df, dynamic_vars)
+      if (show_constants == T) df <- cbind(df, constant_vars)
+      return(df)
+    },
     # fields -------------------------------------------------------------------
     act = 0.2,
     avg_s = 0.2,
     avg_m = 0.2,
-    avg_l = 0.2
+    avg_l = 0.2,
+    # number of unit in the layer, if you create a single unit object, this is
+    # one, otherwise the layer will set this value
+    unit_number = 1
   ),
   # active ---------------------------------------------------------------------
   active = list(
@@ -160,8 +224,36 @@ unit <- R6::R6Class("unit",
     nxx1 = function(x){
       # nxx1_df is a df that is used as a lookup-table, it is stored internally
       # but you can generate the data with the create_nxx1 function
-      approx(nxx1_df$nxx1_dom, nxx1_df$nxoxp1, x, method = "constant",
-             rule = 2)$y
+      approx(private$nxx1_df$nxx1_dom, private$nxx1_df$nxoxp1, x,
+             method = "constant", rule = 2)$y
+    },
+
+    create_nxx1 = function(){
+      # we don't have precalculated vectors for interpolation
+      n_x <- 2000 # size of the precalculated vectors
+      mid <- 2 # mid length of the domain
+      domain <- seq(-mid, mid, length.out = n_x) # will be "nxx1_dom"
+      # domain of Gaussian
+      dom_g <- seq(-2 * mid, 2 * mid, length.out = 2 * n_x)
+      values <- rep(0, n_x) # will be "nxoxp1"
+      sd <- .005 # standard deviation of the Gaussian
+      gaussian <- exp(- (dom_g ^ 2) / (2 * sd ^ 2)) / (sd * sqrt(2 * pi))
+
+      XX1 <- function(x, gain = 100){
+        x[x <= 0] <- 0
+        x[x > 0] <- gain * x[x > 0] / (gain * x[x > 0] + 1) # gain = 100 default
+        return(x)
+      }
+
+      for (p in 1:n_x){
+        low <- n_x - p + 1
+        high <- 2 * n_x - p
+        values[p] <- sum(XX1(domain) * gaussian[low:high])
+        values[p] <- values[p] / sum(gaussian[low:high])
+      }
+      nxx1_dom <- domain
+      nxoxp1 <- values
+      as.data.frame(cbind(nxoxp1, nxx1_dom))
     },
 
     update_averages = function(){
@@ -190,7 +282,7 @@ unit <- R6::R6Class("unit",
   ss_dt = 0.5,          # time step constant for super-short average
   s_dt = 0.5,           # time step constant for short average
   m_dt = 0.1,           # time step constant for medium-term average
-  avg_l_dt = 0.1,       # time step constant for long-term average
+  l_dt = 0.1,       # time step constant for long-term average
   # other
   avg_l_max = 1.5,      # max value of avg_l
   avg_l_min = 0.1,      # min value of avg_l
@@ -202,6 +294,7 @@ unit <- R6::R6Class("unit",
   spk_thr = 1.2,        # normalized spike threshold
   v_reset= 0.3,         # reset membrane potential after spike
   v_gain = 0.04,        # gain that voltage produces on adaptation
-  spike_gain_adapt = 0.00805 # effect of spikes on adaptation
+  spike_gain_adapt = 0.00805, # effect of spikes on adaptation
+  nxx1_df = NULL        # this is the nxx1 activation function as a data frame
   )
 )
