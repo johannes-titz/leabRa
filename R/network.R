@@ -58,16 +58,20 @@ network <-  R6::R6Class("network",
 
       ## Normalizing the rows of "cxn" so they add to 1
       cxn <- t(apply(cxn, 1, function(x) if(sum(x) > 0) x / sum(x) else x))
+      n_lays <- length(dim_lays)
 
       ##
       # list that contains layer objects
       net_lays <- mapply(function(dim_lays, gi) layer$new(dim_lays, gi), dim_lays, gi)
+      # set the number of the layer in network
+      Map(function(x, y) x$layer_number <- y, net_lays, 1:n_lays)
+
       # binary cxn
       cxn_b <- apply(cxn, c(1, 2), function(x) ifelse(x > 0, 1, 0))
       # som other useful stuff
       lays_n <- sapply(net_lays, function(x) x$n)
       net_n_units <- Reduce("+", lays_n)
-      n_lays <- length(dim_lays)
+
 
       ## Second test of argument dimensions
       # these are matrices like w_init and cxn to ease testing
@@ -143,7 +147,8 @@ network <-  R6::R6Class("network",
       self$lays <- Map(function(x, y) {if(!isempty(y)) x$wt <- y; x}, net_lays, wts)
 
       # set the contrast-enhanced version of the weights
-      self$lays <- lapply(self$lays, function(x) x$set_ce_weights(off, gain))
+      lapply(self$lays, function(x) x$set_ce_weights(off, gain))
+
       private$cxn <- cxn
       private$n_lays <- n_lays
       private$n_units <- net_n_units
@@ -309,12 +314,12 @@ network <-  R6::R6Class("network",
       invisible(self)
     },
 
-    #' updt_pct_act updates the acts_p_avg and pct_act_scale variables for all
+    #' updt_recip_avg_act_n updates the acts_p_avg and pct_act_scale variables for all
     #' layers. These variables update at the end of plus phases instead of cycle by
     #' cycle.
     #'
     #' @rdname network
-    updt_pct_act = function(){
+    updt_recip_avg_act_n = function(){
       # updates the acts_p_avg and pct_act_scale variables for all lays.
       # These variables update at the end of plus phases instead of
       # cycle by cycle. The avg_l values are not updated here.
@@ -322,7 +327,7 @@ network <-  R6::R6Class("network",
       # pct_act_scale. If partial connectivity were to be used, this
       # should have the calculation in WtScaleSpec::SLayActScale, in
       # LeabraConSpec.cpp
-      self$lays <- lapply(self$lays, function(x) x$updt_pct_act())
+      self$lays <- lapply(self$lays, function(x) x$updt_recip_avg_act_n())
       invisible(self)
     },
 
