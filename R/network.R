@@ -19,57 +19,19 @@
 #' @slot lrate learning rate
 network <-  R6::R6Class("network",
   public = list(
-    initialize = function(dim_lays = "list", cxn = "matrix", w_init = "matrix",
-                          gi = rep(2, length(dim_lays)), off = 1, gain = 6,
-                          lrate = 0.1){
-      # constructor
-      # set standard value for gi of 2 and check whether length of gi is equal
-      # to length of layers
-      # if (isempty(gi)) gi <- rep(2, n_lays)
-      if (length(gi) != n_lays){
-        stop(paste("You have to specify gi for every layer, your gi vector has",
-                   "length", length(gi), "but you have", n_lays, "layers"))
-      }
+    initialize = function(dim_lays, cxn, w_init, gi = rep(2, length(dim_lays)),
+                          off = 1, gain = 6, lrate = 0.1){
+      private$has_every_layer_gi(gi, dim_lays)
+      private$test_argument_dimensions(cxn, n_lays, w_init)
+      private$normalize_rcv_cxn(cxn)
+      private$n_lays <- length(dim_lays)
 
-      ## Initial test of argument dimensions
-      if (nrow(cxn) != ncol(cxn)){
-        stop(paste("Cannot create network. Connection matrix must have the same ",
-                   "number of rows and columns. It has ", nrow(cxn), " rows and ",
-                   ncol(cxn), " columns.", sep = ""))
-      }
-      if (nrow(cxn) != n_lays){
-        stop(paste("Cannot create network. You have ", n_lays, " lays and ",
-                   nrow(cxn), " rows in the ", "connection matrix. You need to specify ",
-                   "cxn for every layer, so the number of rows in the ",
-                   "connection matrix must equal the number of lays",
-                   sep = ""))
-      }
-      if (sum(dim(w_init) == dim(cxn)) < 2){
-        stop(paste("Cannot create network. You have an initial matrix of weight ",
-                   "matrices with dimensions of ", paste(dim(w_init), collapse = ", "),
-                   " and a connection matrix with dimensions of ",
-                   paste(dim(cxn), collapse = ", "), ". They have ",
-                   "to be identical.", sep = ""))
-      }
-      if (min(cxn) < 0){
-        stop(paste("Cannot create network. Negative projection strengths between",
-                   "lays are not allowed in cxn matrix."))
-      }
-
-      ## Normalizing the rows of "cxn" so they add to 1
-      cxn <- t(apply(cxn, 1, function(x) if(sum(x) > 0) x / sum(x) else x))
-      n_lays <- length(dim_lays)
-
-      ##
-      # list that contains layer objects
-      net_lays <- mapply(function(dim_lays, gi) layer$new(dim_lays, gi), dim_lays, gi)
-      # set the number of the layer in network
-      Map(function(x, y) x$layer_number <- y, net_lays, 1:n_lays)
+      private$create_layers(dim_lays, gi)
 
       # binary cxn
-      cxn_b <- apply(cxn, c(1, 2), function(x) ifelse(x > 0, 1, 0))
+      cxn_b <- apply(private$cxn, c(1, 2), function(x) ifelse(x > 0, 1, 0))
       # som other useful stuff
-      lays_n <- sapply(net_lays, function(x) x$n)
+      lays_n <- sapply(self$lays, function(x) x$n)
       net_n_units <- Reduce("+", lays_n)
 
 
@@ -144,12 +106,11 @@ network <-  R6::R6Class("network",
       # one weight matrix for every layer, (of course only for non-empty w_init
       # elements)
       wts <- apply(w_init, 1, function(x) Reduce("cbind", x))
-      self$lays <- Map(function(x, y) {if(!isempty(y)) x$wt <- y; x}, net_lays, wts)
+      self$lays <- Map(function(x, y) {if(!isempty(y)) x$wt <- y; x}, self$lays, wts)
 
       # set the contrast-enhanced version of the weights
       lapply(self$lays, function(x) x$set_ce_weights(off, gain))
 
-      private$cxn <- cxn
       private$n_lays <- n_lays
       private$n_units <- net_n_units
       private$off <- off
@@ -465,9 +426,75 @@ network <-  R6::R6Class("network",
     lrate = 0.1,  # learning rate for XCAL
     lays = list()
     ),
-
+ # private ---------------------------------------------------------------------
   private = list(
+    has_every_layer_gi = function(gi, dim_lays){
+      if (length(gi) != n_lays){
+        error <- paste("You have to specify gi for every layer, your gi vector
+                       has length", length(gi), "but you have ", n_lays,
+                       " layers.")
+        stop(error)
+      }
 
+    },
+
+    test_argument_dimensions = function(cxn, n_lays, w_init){
+        private$is_cxn_quadratic(cxn)
+        private$is_nrow_cxn_equal_to_n_lays(cxn, n_lays)
+        private$is_dim_w_init_equal_to_dim_cxn(w_init, cxn)
+        private$are_there_negative_cxn(cxn)
+    },
+
+    is_cxn_quadratic = function(cxn){
+      if (nrow(cxn) != ncol(cxn)){
+        error <- (paste("Cannot create network. Connection matrix must have the
+                        same number of rows and columns. It has ", nrow(cxn), "
+                        rows and ", ncol(cxn), " columns.", sep = ""))
+        stop(error)
+      }
+    },
+
+    is_nrow_cxn_equal_to_n_lays = function(cxn, n_lays){
+      if (nrow(cxn) != n_lays){
+        error <- (paste("Cannot create network. You have ", n_lays, " lays and
+                        ", nrow(cxn), " rows in the ", "connection matrix. You
+                        need to specify cxn for every layer, so the number of
+                        rows and columns in the connection matrix must equal the
+                        number of layers.", sep = ""))
+        stop(error)
+      }
+    },
+
+    is_dim_w_init_equal_to_dim_cxn = function(w_init, cxn){
+      if (sum(dim(w_init) == dim(cxn)) < 2){
+        error <- paste("Cannot create network. You have an initial matrix of
+                        weight matrices with dimensions of ",
+                        paste(dim(w_init), collapse = ", "),
+                        ", and a connection matrix with dimensions of ",
+                        paste(dim(cxn), collapse = ", "), ". They have to be
+                        identical.", sep = "")
+        stop(error)
+      }
+    },
+
+    are_there_negative_cxn = function(cxn){
+      if (min(cxn) < 0){
+        error <- paste("Cannot create network. Negative projection strengths
+                        between layers are not allowed in cxn matrix.")
+        stop(error)
+      }
+    },
+
+    normalize_rcv_cxn = function(cxn){
+      private$cxn <- t(apply(cxn, 1, function(x) if(sum(x) > 0) x / sum(x) else x))
+    },
+
+    create_layers = function(dim_lays, gi){
+      self$lays <- mapply(function(dim_lays, gi) layer$new(dim_lays, gi), dim_lays, gi)
+      Map(function(x, y) x$layer_number <- y, self$lays, 1:length(self$lays))
+    },
+
+    # fields --------------------------
     dim_lays = list(),
     cxn = matrix(),
     w_init = matrix(),
