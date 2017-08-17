@@ -58,8 +58,12 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{new()}}{Creates an object of this class with default
-#'   parameters.}
+#'   \item{\code{new(dims, g_i_gain = 2)}}{Creates an object of this class with default
+#'   parameters.
+#'
+#'   \code{dims} A a pair of numbers giving the rows and columns of the layer.
+#'
+#'   \code{g_i_gain} Gain factor for inhibitory conductance. If you want less activation in a layer, set this higher.}
 #'
 #'   \item{\code{get_unit_acts()}}{Returns a vector with the activities of all
 #' units of a layer.}
