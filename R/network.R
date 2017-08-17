@@ -3,45 +3,47 @@
 # leabra network class----------------------------------------------------------
 #' leabra network class
 #'
-#' @slot dim_lays list of 2d vectors that contains number of rows and columns
-#' of lays
-#' @slot cxn matrix specifying connection strength between lays, if
+#' @field dim_lays list of number pairs for rows and columns of the layer
+#' @field cxn matrix specifying connection strength between lays, if
 #' layer j sends projections to layer i, then cxn[i, j] = c > 0; 0
 #' otherwise, c specifies the relative strength of that connection with respect
 #' to the other projections to layer i
-#' @slot w_init matrix of initial weight matrices, this is analogous to cxn,
+#' @field w_init matrix of initial weight matrices, this is analogous to cxn,
 #' i.e. w_init[i, j] contains the initial weight matrix for the cxn from
 #' layer j to i
-#' @slot gi vector of gi values for every layer, this comes in handy to control
+#' @field gi vector of gi values for every layer, this comes in handy to control
 #' overall level of inhibition of specific lays
-#' @slot off "offset" in the SIG function for contrast enhancement
-#' @slot gain gain in the SIG function for contrast enhancement
-#' @slot lrate learning rate
+#' @field off "offset" in the SIG function for contrast enhancement
+#' @field gain gain in the SIG function for contrast enhancement
+#' @field lrate learning rate
 network <-  R6::R6Class("network",
   public = list(
     initialize = function(dim_lays, cxn, w_init, gi = rep(2, length(dim_lays)),
                           off = 1, gain = 6, lrate = 0.1){
+
       private$has_every_layer_gi(gi, dim_lays)
-      private$test_argument_dimensions(cxn, n_lays, w_init)
+      private$test_argument_dimensions(cxn, dim_lays, w_init)
       private$normalize_rcv_cxn(cxn)
+
       private$n_lays <- length(dim_lays)
 
       private$create_layers(dim_lays, gi)
 
-      # binary cxn
-      cxn_b <- apply(private$cxn, c(1, 2), function(x) ifelse(x > 0, 1, 0))
-      # som other useful stuff
-      lays_n <- sapply(self$lays, function(x) x$n)
-      net_n_units <- Reduce("+", lays_n)
+      private$is_cxn_greater_zero <- apply(private$cxn, c(1, 2),
+                                   function(x) ifelse(x > 0, 1, 0))
 
+      private$set_all_unit_numbers()
+
+      w_init_empty <- matrix(sapply(w0, isempty), nrow = nrow(w0))
+
+      w_index_low <- t(apply(private$number_of_units_in_receiving_layers, 1, function(x)
+        head(c(1, cumsum(x) + 1), -1)))
+      w_index_up <- t(apply(private$number_of_units_in_receiving_layers, 1, function(x) cumsum(x)))
+
+      #test_argument_dimensions2
 
       ## Second test of argument dimensions
       # these are matrices like w_init and cxn to ease testing
-      lays_n_recv <- matrix(rep(lays_n, length(lays_n)), ncol = length(lays_n),
-                            byrow = T) * cxn_b
-      lays_n_send <- matrix(rep(lays_n, length(lays_n)),
-                            ncol = length(lays_n)) * cxn_b
-      w_init_empty <- matrix(sapply(w0, isempty), nrow = nrow(w0))
 
       # upper and lower index limits to extract specific weights from specific
       # layers; usually you just have one whole weight matrix for every layer,
@@ -52,9 +54,7 @@ network <-  R6::R6Class("network",
       # sum them up (cumsum) add 1; and always begin with index 1
       # for lower limit you obviously do not need the last value, but for upper
       # limit (where you do not need the leading 1)
-      w_index_low <- t(apply(lays_n_recv, 1, function(x)
-        head(c(1, cumsum(x) + 1), -1)))
-      w_index_up <- t(apply(lays_n_recv, 1, function(x) cumsum(x)))
+
 
       # translates matrix into character version for error output
       which_matrix <- function(x){
@@ -89,7 +89,7 @@ network <-  R6::R6Class("network",
         sum(dim(w_init) == c(lay_n_recv, lay_n_send)) != 2
       }
 
-      w_dim_lay_dim <- mapply(check_w_lay_dim, w_init, lays_n_send, lays_n_recv)
+      w_dim_lay_dim <- mapply(check_w_lay_dim, w_init, private$number_of_units_in_sending_layers, private$number_of_units_in_receiving_layers)
       w_dim_lay_dim <- matrix(w_dim_lay_dim, nrow = nrow(w_init))
 
       if (sum(w_dim_lay_dim) > 0)
@@ -100,7 +100,7 @@ network <-  R6::R6Class("network",
              which_matrix(w_dim_lay_dim))
 
       ## Setting the inital weights for each layer
-      lay_inp_n <- apply(cxn, 1, function(x) sum(c(0, lays_n[x > 0])))
+      lay_inp_n <- apply(cxn, 1, function(x) sum(c(0, private$number_of_units_in_layers[x > 0])))
 
       # cbind weights row-wise (row receives inputs from columns) to have only
       # one weight matrix for every layer, (of course only for non-empty w_init
@@ -112,13 +112,9 @@ network <-  R6::R6Class("network",
       lapply(self$lays, function(x) x$set_ce_weights(off, gain))
 
       private$n_lays <- n_lays
-      private$n_units <- net_n_units
       private$off <- off
       private$gain <- gain
       private$gi <- gi
-      private$cxn_b <- cxn_b
-      private$lays_n_send <- lays_n_send
-      private$lays_n_recv <- lays_n_recv
       private$w_index_low <- w_index_low
       private$w_index_up <- w_index_up
       self$lrate <- lrate
@@ -203,8 +199,8 @@ network <-  R6::R6Class("network",
 
       ## For each connection matrix, calculate the intermediate vars.
       # make cxn-format versions of above averages
-      # we need cxn_b with no connection specified with NULL
-      cxn_b_null <- apply(private$cxn_b, c(1, 2),
+      # we need is_cxn_greater_zero with no connection specified with NULL
+      cxn_b_null <- apply(private$is_cxn_greater_zero, c(1, 2),
                           function(x) ifelse(x == 0, return(NULL), return(x)))
 
       # just repeat the avgs row or column-wise and then set those to NULL
@@ -235,9 +231,9 @@ network <-  R6::R6Class("network",
       # average is important; so just repeat the vector for every incoming
       # neuron
       l_recv <- m_mapply(function(x, y) matrix(rep(x, y), ncol = y), avg_l_rcv,
-                         private$lays_n_recv)
+                         private$number_of_units_in_receiving_layers)
       avg_l_lrn_rcv <- m_mapply(function(x, y) matrix(rep(x, y), ncol = y),
-                                avg_l_lrn_rcv, private$lays_n_recv)
+                                avg_l_lrn_rcv, private$number_of_units_in_receiving_layers)
 
       dwt_m <- m_mapply(function(x, y) self$get_dwt(x, y), s_hebb, m_hebb)
       dwt_l <- m_mapply(function(x, y) self$get_dwt(x, y), s_hebb, l_recv)
@@ -385,7 +381,7 @@ network <-  R6::R6Class("network",
         sum(dim(w_init) == c(lay_n_recv, lay_n_send)) != 2
       }
 
-      w_dim_lay_dim <- mapply(check_w_lay_dim, w_init, lays_n_send, lays_n_recv)
+      w_dim_lay_dim <- mapply(check_w_lay_dim, w_init, number_of_units_in_sending_layers, number_of_units_in_receiving_layers)
       w_dim_lay_dim <- matrix(w_dim_lay_dim, nrow = nrow(w_init))
 
       if (sum(w_dim_lay_dim) > 0)
@@ -397,7 +393,7 @@ network <-  R6::R6Class("network",
 
       ## Now we set the weights
       # first find how many units project to the layer in all the network
-      lay_inp_n <- apply(private$lays_n_recv, 1, sum)
+      lay_inp_n <- apply(private$number_of_units_in_receiving_layers, 1, sum)
 
       # make one weight matrix for every layer by collapsing receiving layer
       # weights columnwise, only do this for layers that receive something at all
@@ -429,7 +425,7 @@ network <-  R6::R6Class("network",
  # private ---------------------------------------------------------------------
   private = list(
     has_every_layer_gi = function(gi, dim_lays){
-      if (length(gi) != n_lays){
+      if (length(gi) != length(dim_lays)){
         error <- paste("You have to specify gi for every layer, your gi vector
                        has length", length(gi), "but you have ", n_lays,
                        " layers.")
@@ -438,9 +434,9 @@ network <-  R6::R6Class("network",
 
     },
 
-    test_argument_dimensions = function(cxn, n_lays, w_init){
+    test_argument_dimensions = function(cxn, dim_lays, w_init){
         private$is_cxn_quadratic(cxn)
-        private$is_nrow_cxn_equal_to_n_lays(cxn, n_lays)
+        private$is_nrow_cxn_equal_to_n_lays(cxn, dim_lays)
         private$is_dim_w_init_equal_to_dim_cxn(w_init, cxn)
         private$are_there_negative_cxn(cxn)
     },
@@ -454,9 +450,9 @@ network <-  R6::R6Class("network",
       }
     },
 
-    is_nrow_cxn_equal_to_n_lays = function(cxn, n_lays){
-      if (nrow(cxn) != n_lays){
-        error <- (paste("Cannot create network. You have ", n_lays, " lays and
+    is_nrow_cxn_equal_to_n_lays = function(cxn, dim_lays){
+      if (nrow(cxn) != length(dim_lays)){
+        error <- (paste("Cannot create network. You have ", length(dim_lays), " layer(s) and
                         ", nrow(cxn), " rows in the ", "connection matrix. You
                         need to specify cxn for every layer, so the number of
                         rows and columns in the connection matrix must equal the
@@ -494,12 +490,39 @@ network <-  R6::R6Class("network",
       Map(function(x, y) x$layer_number <- y, self$lays, 1:length(self$lays))
     },
 
+    set_all_unit_numbers = function(){
+      private$number_of_units_in_layers <- sapply(self$lays, function(x) x$n)
+      private$number_of_units_in_net <- Reduce("+", private$number_of_units_in_layers)
+      private$get_number_of_units_in_receiving_layers()
+      private$get_number_of_units_in_sending_layers()
+    },
+
+    get_number_of_units_in_receiving_layers = function(){
+      result <- matrix(rep(private$number_of_units_in_layers,
+                 length(private$number_of_units_in_layers)
+        ), ncol = length(private$number_of_units_in_layers), byrow = T
+      )
+      result <- result * private$is_cxn_greater_zero
+      private$number_of_units_in_receiving_layers <- result
+    },
+
+    get_number_of_units_in_sending_layers = function(){
+      result <- matrix(rep(private$number_of_units_in_layers,
+                           length(private$number_of_units_in_layers)),
+           ncol = length(private$number_of_units_in_layers))
+      result <- result * private$is_cxn_greater_zero
+      private$number_of_units_in_sending_layers <- result
+    },
+
+
+
     # fields --------------------------
     dim_lays = list(),
     cxn = matrix(),
     w_init = matrix(),
     n_lays = NULL,  # number of lays (number of objs in "lays")
-    n_units = NULL, # total number of units in the network
+    number_of_units_in_net = NULL,
+    number_of_units_in_layers = NULL,
 
     # constants
     avg_l_lrn_max = 0.01, # max amount of "BCM" learning in XCAL
@@ -515,9 +538,9 @@ network <-  R6::R6Class("network",
     avg_l_lrn = list(),
     #dependent
     m1 = NULL, # the slope in the left part of XCAL's "check mark"
-    cxn_b = matrix(), # binary version of cxn
-    lays_n_recv = matrix(), # number of units of receiving layer in cxn matrix
-    lays_n_send = matrix(), # number of units of sending layer in cxn matrix
+    is_cxn_greater_zero = matrix(), # binary version of cxn
+    number_of_units_in_receiving_layers = matrix(), # number of units of receiving layer in cxn matrix
+    number_of_units_in_sending_layers = matrix(), # number of units of sending layer in cxn matrix
     w_index_low = matrix(), # lower index to extract weights from layer matrix
     # in cxn format
     w_index_up = matrix() # upper index to extract weights from layer matrix in
