@@ -111,8 +111,6 @@ for (epoch in seq(n_epochs)) {
             net$cycle(inputs, clamp_inp = 1)
         }
 
-        net$updt_recip_avg_act_n() # update averages used for net input scaling
-
         #+++++++ LEARNING +++++++
         net <- net$chg_wt()  # updates the avg_l vars and applies XCAL learning
 
