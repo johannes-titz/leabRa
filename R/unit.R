@@ -3,13 +3,16 @@ NULL
 
 #' Class to simulate a biologically realistic neuron
 #'
-#' This class simulates a biologically realistic neuron in the lebra framework. When you use a layer class, you will see that a layer object has a variable (field) \code{units}, which is a list of unit objects.
+#' This class simulates a biologically realistic neuron in the lebra framework.
+#' When you use a layer class, you will see that a layer object has a variable
+#' (field) \code{units}, which is a list of unit objects.
 #'
 #' @docType class
 #' @importFrom R6 R6Class
 #' @export
 #' @keywords data
-#' @return Object of \code{\link{R6Class}} with methods for calculating neuron activity changes
+#' @return Object of \code{\link{R6Class}} with methods for calculating neuron
+#'   activity changes
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
@@ -46,8 +49,9 @@ NULL
 #' @field act percentage activation ("firing rate") of the unit, which is sent
 #'   to other units, think of it as a percentage of how many neurons are active
 #'   in a microcolumn of 100 neurons
-#' @field avg_s short-term running average activation, integrates over avg_ss (a private variable, which integrates over act),
-#'   represents plus phase learning signal
+#' @field avg_s short-term running average activation, integrates over avg_ss (a
+#'   private variable, which integrates over act), represents plus phase
+#'   learning signal
 #' @field avg_m medium-term running average activation, integrates over avg_s,
 #'   represents minus phase learning signal
 #' @field avg_l long-term running average activation, integrates over avg_m,
@@ -55,15 +59,33 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{new()}}{Creates an object of this class with default parameters.}
+#'   \item{\code{new()}}{Creates an object of this class with default
+#'   parameters.}
 #'
-#'   \item{\code{cycle(g_e_raw, g_i)}}{Cycles 1 ms with given excitatory conductance  \code{g_e_raw} and inhibitory conductance \code{g_i}. Excitatory conductance depends on the weights to other units and the activity of those other units. Inhibitory conductance depends on feedforward and feedback inhibition. See layer cycle method.}
+#'   \item{\code{cycle(g_e_raw, g_i)}}{Cycles 1 ms with given excitatory
+#'   conductance  \code{g_e_raw} and inhibitory conductance \code{g_i}.
+#'   Excitatory conductance depends on the weights to other units and the
+#'   activity of those other units. Inhibitory conductance depends on
+#'   feedforward and feedback inhibition. See layer cycle method.}
 #'
-#'   \item{\code{clamp_cycle(activation)}}{Clamps the value of \code{activation} to the \code{act} variable of the unit without any time integration. Then updates averages. This is usually done when presenting external input.}
+#'   \item{\code{clamp_cycle(activation)}}{Clamps the value of \code{activation}
+#'   to the \code{act} variable of the unit without any time integration. Then
+#'   updates averages. This is usually done when presenting external input.}
 #'
-#'   \item{\code{updt_avg_l()}}{Updates the variable \code{avg_l}. This usually happens before the weights are changed in the network (after the plus phase), and not every cycle. If avg_m is smaller than 0.2 (or equal) avg_l tends to move towards the constant minium avg_l value (0.1). If avg_m is larger than 0.2, than avg_l will tend to go to the constant maximum avg_l value (1.5)}
+#'   \item{\code{updt_avg_l()}}{Updates the variable \code{avg_l}. This usually
+#'   happens before the weights are changed in the network (after the plus
+#'   phase), and not every cycle. If avg_m is smaller than 0.2 (or equal) avg_l
+#'   tends to move towards the constant minium avg_l value (0.1). If avg_m is
+#'   larger than 0.2, than avg_l will tend to go to the constant maximum avg_l
+#'   value (1.5)}
 #'
-#'   \item{\code{get_vars(show_dynamics = T, show_constants = F)}}{Returns a data frame with 1 row with the current state of all the variables of the unit. You can choose whether you want dynamic values and / or constant values. This might be useful if you want to analyse what happens in a unit, which would otherwise not be possible, because most of the variables (fields) are private in this class.}}
+#'   \item{\code{get_vars(show_dynamics = T, show_constants = F)}}{Returns a
+#'   data frame with 1 row with the current state of all the variables of the
+#'   unit. You can choose whether you want dynamic values and / or constant
+#'   values. This might be useful if you want to analyse what happens in a unit,
+#'   which would otherwise not be possible, because most of the variables
+#'   (fields) are private in this class.}}
+#'
 unit <- R6::R6Class("unit",
   # public ---------------------------------------------------------------------
   public = list(
@@ -123,7 +145,8 @@ unit <- R6::R6Class("unit",
       ## Updating adaptation current
       private$i_adapt <- private$i_adapt + private$cyc_dt *
         (private$i_adapt_dt * (private$v_gain * (private$v - private$v_rev_l)
-                            - private$i_adapt) + private$spike * private$spike_gain_adapt)
+                               - private$i_adapt)
+         + private$spike * private$spike_gain_adapt)
 
       private$update_averages()
       invisible(self)
