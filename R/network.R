@@ -493,7 +493,7 @@ network <-  R6::R6Class("network",
       m <- (private$d_rev - 1) / private$d_rev
       return(m)
     },
-
+    # subfunctions for constructor----------------------------------------------
     has_every_layer_gi = function(gi, dim_lays){
       if (length(gi) != length(dim_lays)){
         error <- paste("You have to specify gi for every layer, your gi vector
@@ -503,7 +503,7 @@ network <-  R6::R6Class("network",
       }
 
     },
-
+    # first argument test in constructor ---------------------------------------
     test_argument_dimensions = function(dim_lays, w_init){
         private$is_cxn_quadratic()
         private$is_nrow_cxn_equal_to_n_lays(dim_lays)
@@ -584,6 +584,7 @@ network <-  R6::R6Class("network",
       private$number_of_units_in_sending_layers <- result
     },
 
+    # second argument test in constructor---------------------------------------
     # translates matrix into character version for error output
     matrix_to_character = function(x){
       apply(which(x == T, arr.ind = T), 1,
@@ -628,7 +629,7 @@ network <-  R6::R6Class("network",
                    "for that layer."))
       }
     },
-
+    # other --------------------------------------------------------------------
     set_all_layers_to_ext_inputs = function(){
       Map(function(x, y) if (!is.null(y)) x$clamp_cycle(y), self$lays,
           private$ext_inputs)
