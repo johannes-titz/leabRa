@@ -11,7 +11,8 @@ NULL
 #' @importFrom R6 R6Class
 #' @export
 #' @keywords data
-#' @return Object of \code{\link{R6Class}} with methods for calculating changes of activity in a layer of neurons
+#' @return Object of \code{\link{R6Class}} with methods for calculating changes
+#'   of activity in a layer of neurons
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
@@ -25,6 +26,7 @@ NULL
 #'
 #' # let us clamp the activation of the 25 units to some random values between
 #' # 0.05 and 0.95
+#' l <- layer$new(c(5, 5))
 #' acts <- 0.05 + runif(25, 0, .9)
 #' l$avg_act
 #' l$clamp_cycle(acts)
@@ -52,21 +54,23 @@ NULL
 #' lines(result$g_e, type = "b", col = "blue")
 #'
 #' @field units a list with all the \link{unit} objects of the layer
-#' @field wt a receiving x sending weight matrix, where the receiving unit (row) has the current weight values for all sending units (columns)
+#' @field wt a receiving x sending weight matrix, where the receiving unit (row)
+#'   has the current weight values for all sending units (columns)
 #' @field ce_wt sigmoidal contrast-enhanced version of the weight matrix wt
 #' @field n number of units in layer
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{new(dims, g_i_gain = 2)}}{Creates an object of this class with default
-#'   parameters.
+#'   \item{\code{new(dims, g_i_gain = 2)}}{Creates an object of this class with
+#'   default parameters.
 #'
-#'   \code{dims} A a pair of numbers giving the rows and columns of the layer.
+#'     \code{dims} A a pair of numbers giving the rows and columns of the layer.
 #'
-#'   \code{g_i_gain} Gain factor for inhibitory conductance. If you want less activation in a layer, set this higher.}
+#'     \code{g_i_gain} Gain factor for inhibitory conductance. If you want less
+#'     activation in a layer, set this higher.}
 #'
 #'   \item{\code{get_unit_acts()}}{Returns a vector with the activities of all
-#' units of a layer.}
+#'   units of a layer.}
 #'
 #'   \item{\code{get_unit_scaled_acts()}}{get_unit_scaled_acts returns a vector
 #'   with the scaled activities of all units of a layer. Scaling is done with
@@ -75,14 +79,14 @@ NULL
 #'   \item{\code{cycle(intern_input, ext_input)}}{Iterates one time step with
 #'   layer object.
 #'
-#'   \code{intern_input} Vector with inputs from all other layers. Each input
+#'    \code{intern_input} Vector with inputs from all other layers. Each input
 #'   has already been scaled by a reciprocal function of the number of active
 #'   units (recip_avg_act_n) of the sending layer and by the connection strength
 #'   between the receiving and sending layer. The weight matrix is multiplied
 #'   with this input vector to get the excitatory conductance for each unit in
 #'   the layer.
 #'
-#'   \code{ext_input} Vector with inputs not coming from another layer, with
+#'     \code{ext_input} Vector with inputs not coming from another layer, with
 #'   length equalling the number of units in this layer. If empty, no external
 #'   inputs are processed. If the external inputs are not clamped, this is
 #'   actually an excitatory conductance value, which is added to the conductance
@@ -93,37 +97,44 @@ NULL
 #'   object with clamped acts, meaning that acts are
 #'   instantenously set without time integration)
 #'
-#'   \code{acts} acts you want to clamp to the units in the layer}
+#'     \code{acts} acts you want to clamp to the units in the layer}
 #'
-#' \item{\code{get_unit_act_avgs()}}{Returns a list with the short, medium and
+#'   \item{\code{get_unit_act_avgs()}}{Returns a list with the short, medium and
 #' long term activation averages of all units in the layer as vectors. The super
 #' short term average is not returned, and the long term average is not updated
 #' before being returned. These averages are used by the network class to
 #' calculate weight changes.}
 #'
-#' \item{\code{updt_unit_avg_l()}}{Updates the long-term average (avg_l) of all
+#'   \item{\code{updt_unit_avg_l()}}{Updates the long-term average (avg_l) of all
 #' units in the layer, usually done after a plus phase.}
 #'
-#' \item{\code{updt_recip_avg_act_n()}}{Updates the avg_act_inert and
+#'   \item{\code{updt_recip_avg_act_n()}}{Updates the avg_act_inert and
 #' recip_avg_act_n variables, these variables update at the end of plus phases
 #' instead of cycle by cycle. This version assumes full connectivity when
 #' updating recip_avg_act_n.}
 #'
-#' \item{\code{reset(random = F)}}{Sets the activation and activation averages
+#'   \item{\code{reset(random = F)}}{Sets the activation and activation averages
 #' of all units to 0. Used to begin trials from a stationary point.
 #'
-#' \code{random} Logical variable, if TRUE the activation ist set randomly
+#'     \code{random} Logical variable, if TRUE the activation ist set randomly
 #' between .05 and .95 for every unit instead of 0.}
 #'
-#' \item{\code{set_ce_weights()}}{Sets contrast enhanced weight values}
+#'   \item{\code{set_ce_weights()}}{Sets contrast enhanced weight values}
 #'
-#' \item{\code{get_unit_vars(show_dynamics = T, show_constants = F)}}{Returns a data frame with with the current state of all unit variables in the layer. Every row is a unit. You can choose whether you want dynamic values and / or constant values. This might be useful if you want to analyse what happens in units of a layer, which would otherwise not be possible, because most of the variables (fields) are private in unit class.}
-#' \item{\code{get_layer_vars(show_dynamics = T, show_constants = F)}}{Returns a
+#'   \item{\code{get_unit_vars(show_dynamics = T, show_constants = F)}}{Returns
+#'   a data frame with with the current state of all unit variables in the
+#'   layer. Every row is a unit. You can choose whether you want dynamic values
+#'   and / or constant values. This might be useful if you want to analyse what
+#'   happens in units of a layer, which would otherwise not be possible, because
+#'   most of the variables (fields) are private in unit class.}
+#'
+#'   \item{\code{get_layer_vars(show_dynamics = T, show_constants = F)}}{Returns a
 #' data frame with 1 row with the current state of the variables in the layer.
 #' You can choose whether you want dynamic values and / or constant values. This
 #' might be useful if you want to analyse what happens in a layer, which would
 #' otherwise not be possible, because some of the variables (fields) are private
 #' in the layer class.}
+#'
 layer <- R6::R6Class("layer",
   #public ----------------------------------------------------------------------
   public = list(
@@ -146,7 +157,8 @@ layer <- R6::R6Class("layer",
       n_act_lrgr_forty <- max(c(sum(self$get_unit_acts() > 0.4), 1))
       private$recip_avg_act_n <- 1 / (n_act_lrgr_forty + 2)
       private$g_fbi <- private$g_fbi_gain * self$avg_act
-      private$g_ffi <- private$g_ffi_gain * max(c(private$g_e_avg - private$g_ffi_thr, 0))
+      private$g_ffi <- private$g_ffi_gain * max(c(private$g_e_avg -
+                                                    private$g_ffi_thr, 0))
       invisible(self)
     },
 
@@ -166,7 +178,8 @@ layer <- R6::R6Class("layer",
 
       ## obtaining inhibitory conductance
       private$g_e_avg <- mean(g_e_per_unit)
-      private$g_ffi <- private$g_ffi_gain * max(c(private$g_e_avg - private$g_ffi_thr, 0))
+      private$g_ffi <- private$g_ffi_gain * max(c(private$g_e_avg -
+                                                    private$g_ffi_thr, 0))
       private$g_fbi <- private$g_fbi + private$g_fbi_dt *
         (private$g_fbi_gain * self$avg_act - private$g_fbi)
       g_i <- private$g_i_gain * (private$g_ffi + private$g_fbi)
@@ -213,8 +226,8 @@ layer <- R6::R6Class("layer",
     },
 
     updt_recip_avg_act_n = function(){
-      private$avg_act_inert <- private$avg_act_inert + private$avg_act_inert_dt *
-        (self$avg_act - private$avg_act_inert)
+      private$avg_act_inert <- private$avg_act_inert +
+        private$avg_act_inert_dt * (self$avg_act - private$avg_act_inert)
       n_units_avg_act <- max(round(private$avg_act_inert * private$n), 1)
       private$recip_avg_act_n <- 1 / (n_units_avg_act + 2)
       invisible(self)
@@ -266,7 +279,7 @@ layer <- R6::R6Class("layer",
     wt = NULL,         # An NxI weights matrix, where the n-th row has the
     # current wt values for all inputs coming to the n-th unit
     ce_wt = NULL,      # contrast-enhanced version of wt. ce_wt = SIG(wt).
-    units = NULL,       # an array with all the unit objs of the layer
+    units = NULL,      # an array with all the unit objs of the layer
     layer_number = 1   # number of layer in the network
   ),
   # private --------------------------------------------------------------------
