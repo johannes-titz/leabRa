@@ -61,10 +61,10 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{new(dims, g_i_gain = 2)}}{Creates an object of this class with
+#'   \item{\code{new(dim, g_i_gain = 2)}}{Creates an object of this class with
 #'   default parameters.
 #'
-#'     \code{dims} A a pair of numbers giving the rows and columns of the layer.
+#'     \code{dim} A a pair of numbers giving the rows and columns of the layer.
 #'
 #'     \code{g_i_gain} Gain factor for inhibitory conductance. If you want less
 #'     activation in a layer, set this higher.}
@@ -133,23 +133,21 @@ NULL
 #' You can choose whether you want dynamic values and / or constant values. This
 #' might be useful if you want to analyse what happens in a layer, which would
 #' otherwise not be possible, because some of the variables (fields) are private
-#' in the layer class.}
-#'
+#' in the layer class.}}
 layer <- R6::R6Class("layer",
   #public ----------------------------------------------------------------------
   public = list(
     # constructor
-    initialize = function(dims, g_i_gain = 2){
-      if (length(c(dims)) == 2){
-        self$n <- prod(dims)
+    initialize = function(dim, g_i_gain = 2){
+      if (length(c(dim)) == 2){
+        self$n <- prod(dim)
         unit1 <- unit$new()
         # use cloning
         self$units <- lapply(seq(self$n), function(x) unit1$clone(deep = T))
       } else{
-        stop("dims argument should be of the type c(rows, columns)")
+        stop("dim argument should be of the type c(rows, columns)")
       }
 
-      # set the number of the unit in layer
       Map(function(x, y) x$unit_number <- y, self$units, 1:self$n)
       # recip_avg_act_n is initialized with number of units that are > 0.4
       # (n_act_lrgr_forty)
@@ -171,12 +169,12 @@ layer <- R6::R6Class("layer",
     },
 
     cycle = function(intern_input, ext_input = NULL){
-      ## obtaining the excitatory conductance because of input
+      # obtaining the excitatory conductance because of input
       # contrast enhanced weights are used
       g_e_per_unit <- self$ce_wt %*% intern_input
       if (!isempty(ext_input)) g_e_per_unit <- g_e_per_unit + ext_input
 
-      ## obtaining inhibitory conductance
+      # obtaining inhibitory conductance
       private$g_e_avg <- mean(g_e_per_unit)
       private$g_ffi <- private$g_ffi_gain * max(c(private$g_e_avg -
                                                     private$g_ffi_thr, 0))
@@ -184,7 +182,7 @@ layer <- R6::R6Class("layer",
         (private$g_fbi_gain * self$avg_act - private$g_fbi)
       g_i <- private$g_i_gain * (private$g_ffi + private$g_fbi)
 
-      ## calling the cycle method for all units
+      # calling the cycle method for all units
       Map(function(x, y, z) x$cycle(y, z), self$units, g_e_per_unit, g_i)
       invisible(self)
     },
@@ -207,7 +205,6 @@ layer <- R6::R6Class("layer",
         (1 - m_avg_prc_in_s_avg) * avg_s
 
       # obtaining avg_l_lrn
-      # avg_l_lrn will be a percentage value between max and min
       avg_l_lrn <- avg_l_lrn_min + private$get_unit_avg_l_prc() *
         (avg_l_lrn_max - avg_l_lrn_min)
 
@@ -276,12 +273,14 @@ layer <- R6::R6Class("layer",
 
     # fields -------------------------------------------------------------------
     n = NULL,          # number of units
-    wt = NULL,         # An NxI weights matrix, where the n-th row has the
+    # An n x i weights matrix, where the n-th row has the
     # current wt values for all inputs coming to the n-th unit
+    wt = NULL,
     ce_wt = NULL,      # contrast-enhanced version of wt. ce_wt = SIG(wt).
-    units = NULL,      # an array with all the unit objs of the layer
+    units = NULL,      # a list with all the unit objects of the layer
     layer_number = 1   # number of layer in the network
   ),
+
   # private --------------------------------------------------------------------
   private = list(
     # get_unit_avg_l_prc returns the percentage value of avg_l in the
@@ -292,7 +291,7 @@ layer <- R6::R6Class("layer",
     },
 
     # fields -------------------------------------------------------------------
-    # dynamic
+    # dynamic ------------------------------------------------------------------
 
     # recip_avg_act_n is the scaling factor for the outputs coming out from THIS
     # layer. Notice this is different from C++ version. Only updated with
@@ -304,7 +303,7 @@ layer <- R6::R6Class("layer",
     g_fbi = NULL,      # feedback inhibition
     g_ffi = NULL,      # feedforward inhibition
 
-    # constant
+    # constant -----------------------------------------------------------------
     g_ffi_gain = 1,          # gain for feedforward inhibition
     g_ffi_thr = 0.1,         # threshold for feedforward inhibition
     g_fbi_gain = 0.5,        # gain for feedback inhibition
