@@ -1,15 +1,12 @@
 #' @include layer.R
+NULL
 
-
-# leabra network class----------------------------------------------------------
 #' leabra network class
 #'
-
-#' Class to simulate a biologically realistic layer of neurons
+#' Class to simulate a biologically realistic network of units organized in layers
 #'
-#' This class simulates a biologically realistic layer of neurons in the lebra
-#' framework. It consists of several \code{unit} objects in the variable (field)
-#' \code{units} and some layer-specific variables.
+#' This class simulates a biologically realistic artifical neuronal network in the lebra framework. It consists of several \code{layer} objects in the variable (field)
+#' \code{lays} and some network-specific variables.
 #'
 #' @docType class
 #' @importFrom R6 R6Class
@@ -42,26 +39,12 @@
 #' # smaller
 #' l$get_scaled_acts()
 #'
-# TODO-----------------------------------------
-#' # let us run 10 cycles with unclamped activation and output the activation
-#' # produced because of changes in conductance
-#' l <- unit$new()
-#' cycle_number <- 1:10
-#' result <- lapply(cycle_number, function(x)
-#'                  l$cycle(intern_input = )$get_vars())
-#' # make a data frame out of the list
-#' result <- plyr::ldply(result)
-#' # plot act
-#' plot(result$act, type = "b", xlab = "cycle", ylab = "act")
-#' # add conductance g_e to plot, should approach g_e_raw
-#' lines(result$g_e, type = "b", col = "blue")
-#'
 #' @field lays a list of layer objects
 #' @field lrate learning rate
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{new()}}{Creates an object of this class with default
+#'   \item{\code{new(dim_lays, w_init; g_i_gain)}}{Creates an object of this class with default
 #'   parameters.
 #'
 #'   \code{dim_lays} list of number pairs for rows and columns of the layers
@@ -71,9 +54,9 @@
 #' specifies the relative strength of that connection with respect to the other
 #' projections to layer i
 #'
-#'   \code{w_init} matrix of initial weight matrices (3d array!), this is analogous to cxn, i.e. w_init[i, j] contains the initial weight matrix for the cxn from layer j to i
+#'   \code{w_init} matrix of initial weight matrices (like a cell array in matlab), this is analogous to cxn, i.e. w_init[i, j] contains the initial weight matrix for the cxn from layer j to i
 #'
-#'   \code{gi} vector of inhibitory conductance gain values for every layer, this comes in handy to control overall level of inhibition of specific lays}
+#'   \code{g_i_gain} vector of inhibitory conductance gain values for every layer, this comes in handy to control overall level of inhibition of specific lays}
 #'
 #'   \item{\code{cycle(ext_inputs, clamp_inp)}}{cycle iterates one time step with network object
 #'
@@ -85,14 +68,7 @@
 #'
 #'   \item{\code{chg_wt()}}{Changes the weights of the entire network with the XCAL learning equation}
 #'
-#'   \item{\code{get_dwt(x, th)}}{get weight changes with the "check mark" function in
-#' XCAL
-#'
-#'     \code{x} vector of abscissa values (short term hebbian product of sending and receiving unit)
-#'
-#'     \code{th} vector of threshold values with the same size as x (for self-organized learning this is the long-term receiver unit activation; for error-driven learning this is the medium-term hebbian product of sending and receiving unit)}
-#'
-#' \item{\code{reset(random)}}{ sets the activation of all units in all layers to 0, and
+#' \item{\code{reset(random = F)}}{ sets the activation of all units in all layers to 0, and
 #' sets all activation time averages to that value, used to begin trials from a
 #' random stationary point, the activity values may also be set to a random value
 #'
@@ -104,66 +80,50 @@
 #' instead of cycle by cycle. This version assumes full connectivity when
 #' updating recip_avg_act_n.}
 #'
-#' \item{\code{reset(random = F)}}{Sets the activation and activation averages
-#' of all units to 0. Used to begin trials from a stationary point.
+#' \item{\code{set_weights(w)}}{Sets new weights
 #'
-#' \code{random} Logical variable, if TRUE the activation ist set randomly
-#' between .05 and .95 for every unit instead of 0.}
-#'
-#' \item{\code{set_ce_weights()}}{Sets contrast enhanced weight values}
+#'   \code{w} matrix of matrices (like a cell array in matlab) with new weight values}
 #'
 #' \item{\code{get_unit_vars(show_dynamics = T, show_constants = F)}}{Returns a data frame with with the current state of all unit variables in the layer. Every row is a unit. You can choose whether you want dynamic values and / or constant values. This might be useful if you want to analyse what happens in units of a layer, which would otherwise not be possible, because most of the variables (fields) are private in unit class.}
+#'
 #' \item{\code{get_layer_vars(show_dynamics = T, show_constants = F)}}{Returns a
 #' data frame with 1 row with the current state of the variables in the layer.
 #' You can choose whether you want dynamic values and / or constant values. This
 #' might be useful if you want to analyse what happens in a layer, which would
 #' otherwise not be possible, because some of the variables (fields) are private
 #' in the layer class.}
-
+#'
+#' \item{\code{get_weights()}}{Returns the complete weight matrix, \code{w[rcv, snd]}
+#' contains the weight matrix for the projections from layer \code{snd} to layer \code{rcv}. Note that this is a matrix of matrices (equivalent to a matlab cell
+#' array.)}
+#'
+#' }
 network <-  R6::R6Class("network",
   public = list(
-    initialize = function(dim_lays, cxn, w_init, gi = rep(2, length(dim_lays)),
+    initialize = function(dim_lays, cxn, w_init,
+                          g_i_gain = rep(2, length(dim_lays)),
                           lrate = 0.1){
-      private$gi <- gi
+      private$dim_lays <- dim_lays
 
-      self$lrate <- lrate
       private$cxn <- cxn
-      private$has_every_layer_gi(gi, dim_lays)
-      private$test_argument_dimensions(dim_lays, w_init)
-      private$normalize_rcv_cxn()
+      private$normalize_cxn()
+      private$cxn_greater_zero <- apply(private$cxn, c(1, 2),
+                                        function(x) ifelse(x > 0, 1, 0))
+
+      private$w_init <- w_init
+      private$g_i_gain <- g_i_gain
+      self$lrate <- lrate
 
       private$n_lays <- length(dim_lays)
 
-      private$create_layers(dim_lays, private$gi)
-
-      private$is_cxn_greater_zero <- apply(private$cxn, c(1, 2),
-                                   function(x) ifelse(x > 0, 1, 0))
-
+      private$test_argument_dimensions()
+      private$create_lays()
       private$set_all_unit_numbers()
-      #private$set_all_w()
+      private$set_all_w_vars()
 
-      private$w_init <- w_init
-      private$w_init_empty <- matrix(sapply(w_init, isempty),
-                                     nrow = nrow(w_init))
-      private$w_index_low <- t(apply(private$n_units_in_receiving_layers,
-                                     1,
-                                     function(x) head(c(1, cumsum(x) + 1), -1)))
-      private$w_index_up <- t(apply(private$n_units_in_receiving_layers,
-                                    1, function(x) cumsum(x)))
+      private$second_test_argument_dimensions()
 
-      ## Second test of argument dimensions
-      private$connected_layers_have_weigth_matrix()
-      private$non_connected_layers_do_not_have_weight_matrix()
-      private$all_layer_dims_correspond_with_weight_matrix_dims()
-
-      # cbind weights row-wise (row receives inputs from columns) to have only
-      # one weight matrix for every layer, (of course only for non-empty w_init
-      # elements)
-      wts <- apply(w_init, 1, function(x) Reduce("cbind", x))
-      Map(function(x, y) {if(!isempty(y)) x$wt <- y; x}, self$lays, wts)
-
-      # set the contrast-enhanced version of the weights
-      lapply(self$lays, function(x) x$set_ce_weights(private$off, private$gain))
+      private$create_wt_for_lays()
       invisible(self)
       },
 
@@ -171,101 +131,66 @@ network <-  R6::R6Class("network",
       private$ext_inputs <- lapply(ext_inputs, c)
       private$is_ext_inputs_valid()
       private$has_layer_ext_input <- !sapply(private$ext_inputs, is.null)
-      has_layer_ext_input_and_is_clamped <- private$has_layer_ext_input & clamp_inp
+      lay_has_no_ext_input_or_is_unclamped <- !private$has_layer_ext_input | !clamp_inp
 
-      if (clamp_inp == T) private$set_all_layers_to_ext_inputs()
+      if (clamp_inp == T) private$clamp_ext_inputs()
 
-      scaled_acts <- lapply(self$lays, function(x) x$get_unit_scaled_acts())
-
-      ## For each unclamped layer, we put all its scaled inputs in one
-      #  column vector, and call its cycle function with that vector
-
-      # find internal input, the list recv has the receiving connections for every
-      # layer; then simply multiply the scaled_acts with the recv connections and
-      # unlist into a vector, now you have a vectorised internal input that is
-      # already scaled with the connection strength
-      #
-      # here we have to remove the connections that are 0!
-      # vectorise the matrices!
-
-      recv <- unlist(apply(private$cxn, 1, list), recursive = F)
-
-      get_intern_input <- function(recv, scaled_acts){
-        unlist(c(mult_list_vec(scaled_acts[recv > 0], recv[recv > 0])))
-      }
-
-      intern_input <- lapply(recv, get_intern_input, scaled_acts)
-
-      # if the layer is not clamped, run cycle with inputs, otherwise return layer
-      cycle_non_clamp <- function(lay, intern_input, ext_input, lay_clamped){
-        if (lay_clamped) lay$cycle(intern_input, ext_input)
-      }
-      Map(cycle_non_clamp, self$lays, intern_input, ext_inputs,
-          !has_layer_ext_input_and_is_clamped)
+      intern_inputs <- private$find_intern_inputs()
+      private$cycle_with_unclamped_lays(intern_inputs, ext_inputs,
+                                        lay_has_no_ext_input_or_is_unclamped)
       invisible(self)
     },
 
     chg_wt = function(){
-      private$updt_recip_avg_act_n() # update averages used for net input scaling
-
-      # updating the long-term averages
+      private$updt_recip_avg_act_n()
       lapply(self$lays, function(x) x$updt_unit_avg_l())
 
-      ## Extracting the averages for all layers
-      avgs <- lapply(self$lays, function(x) x$get_unit_act_avgs(private$m_in_s, private$avg_l_lrn_min, private$avg_l_lrn_max))
+      # Extracting the averages for all layers
+      avgs <- lapply(self$lays,
+                     function(x) x$get_unit_act_avgs(private$m_in_s,
+                                                     private$avg_l_lrn_min,
+                                                     private$avg_l_lrn_max))
       avg_l <- lapply(avgs, function(x) x$avg_l)
       avg_m <- lapply(avgs, function(x) x$avg_m)
       avg_s_with_m <- lapply(avgs, function(x) x$avg_s_with_m)
       avg_l_lrn <- lapply(avgs, function(x) x$avg_l_lrn)
 
-      ## For each connection matrix, calculate the intermediate vars.
-      # make cxn-format versions of above averages
-      # we need is_cxn_greater_zero with no connection specified with NULL
-      cxn_b_null <- apply(private$is_cxn_greater_zero, c(1, 2),
+      # For each connection matrix, calculate the intermediate vars
+
+      is_cxn_null <- apply(private$cxn_greater_zero, c(1, 2),
                           function(x) ifelse(x == 0, return(NULL), return(x)))
 
-      # just repeat the avgs row or column-wise and then set those to NULL
-      # where there is no connection
-      get_snd <- function(avg, cxn_b_null){
-        avg <- matrix(rep(avg, length(avg)), ncol = length(avg), byrow = T)
-        m_mapply(function(x, y) x * y, cxn_b_null, avg)
-      }
+      avg_s_with_m_snd <- private$get_snd_avg(avg_s_with_m, is_cxn_null)
+      avg_s_with_m_rcv <- private$get_rcv_avg(avg_s_with_m, is_cxn_null)
+      avg_m_snd <- private$get_snd_avg(avg_m, is_cxn_null)
+      avg_m_rcv <- private$get_rcv_avg(avg_m, is_cxn_null)
 
-      get_rcv <- function(avg, cxn_b_null){
-        avg <- matrix(rep(avg, length(avg)), ncol = length(avg), byrow = F)
-        m_mapply(function(x, y) x * y, cxn_b_null, avg)
-      }
+      avg_l_rcv <- private$get_rcv_avg(avg_l, is_cxn_null)
+      avg_l_lrn_rcv <- private$get_rcv_avg(avg_l_lrn, is_cxn_null)
 
-      avg_s_with_m_snd <- get_snd(avg_s_with_m, cxn_b_null)
-      avg_s_with_m_rcv <- get_rcv(avg_s_with_m, cxn_b_null)
-      avg_m_snd <- get_snd(avg_m, cxn_b_null)
-      avg_m_rcv <- get_rcv(avg_m, cxn_b_null)
-
-      avg_l_snd <- get_snd(avg_l, cxn_b_null)
-      avg_l_rcv <- get_rcv(avg_l, cxn_b_null)
-      avg_l_lrn_rcv <- get_rcv(avg_l_lrn, cxn_b_null)
-
-      s_hebb <- m_mapply(function(x, y) x %o% y, avg_s_with_m_rcv, avg_s_with_m_snd)
-      m_hebb <- m_mapply(function(x, y) x %o% y, avg_m_rcv, avg_m_snd)
+      s_hebb <- private$m_mapply(function(x, y) x %o% y,
+                         avg_s_with_m_rcv,avg_s_with_m_snd)
+      m_hebb <- private$m_mapply(function(x, y) x %o% y, avg_m_rcv, avg_m_snd)
 
       # this is independent of sending; only the receiving neuron's long term
-      # average is important; so just repeat the vector for every incoming
-      # neuron
-      l_recv <- m_mapply(function(x, y) matrix(rep(x, y), ncol = y), avg_l_rcv,
-                         private$n_units_in_receiving_layers)
-      avg_l_lrn_rcv <- m_mapply(function(x, y) matrix(rep(x, y), ncol = y),
-                                avg_l_lrn_rcv, private$n_units_in_receiving_layers)
+      # average is important for self-organized learning
+      l_rcv <- private$m_mapply(function(x, y) matrix(rep(x, y), ncol = y), avg_l_rcv,
+                         private$n_units_in_rcv_lays)
+      avg_l_lrn_rcv <- private$m_mapply(function(x, y) matrix(rep(x, y), ncol = y),
+                                avg_l_lrn_rcv, private$n_units_in_rcv_lays)
 
-      dwt_m <- m_mapply(function(x, y) self$get_dwt(x, y), s_hebb, m_hebb)
-      dwt_l <- m_mapply(function(x, y) self$get_dwt(x, y), s_hebb, l_recv)
+      dwt_m <- private$m_mapply(function(x, y) private$get_dwt(x, y), s_hebb, m_hebb)
+      dwt_l <- private$m_mapply(function(x, y) private$get_dwt(x, y), s_hebb, l_rcv)
 
       # multiply longerm average by individual unit scaling factor
-      dwt_l <- m_mapply(function(x, y) x * y, dwt_l, avg_l_lrn_rcv)
+      dwt_l <- private$m_mapply(function(x, y) x * y, dwt_l, avg_l_lrn_rcv)
+
       # mulitply medium average by gain for medium (versus long)
       dwt_m <- apply(dwt_m, c(1, 2), function(x) x[[1]] * private$m_lrn)
+
       # combine both dwts and multiply by learning rate
-      dwt <- m_mapply(function(x, y) x+y, dwt_m, dwt_l)
-      dwt <- apply(dwt, c(1,2), function(x) x[[1]] * self$lrate)
+      dwt <- private$m_mapply(function(x, y) x + y, dwt_m, dwt_l)
+      dwt <- apply(dwt, c(1, 2), function(x) x[[1]] * self$lrate)
 
       # replace empty cells with null, then use cbind to generate the dwt for
       # every layer in a list
@@ -273,32 +198,9 @@ network <-  R6::R6Class("network",
         ifelse(isempty(x[[1]]), return(NULL), return(x[[1]])))
       dwt_list <- apply(dwt_null, 1, function(x) Reduce(cbind, x))
 
-      # todo 2017-04-26 jt: probably this is wrong in matlab code, write the
-      # author, it should be dwt > 0 and not wt > 0
-      # weights have to be bounded exponentially
-      exp_weights <- function(dwt, lay){
-        wt <- lay$wt
-        if (!isempty(wt)){
-          new_wt <- ifelse(dwt > 0, wt + (1 - wt) * dwt, wt + wt * dwt)
-          lay$wt <- new_wt
-        }
-        return(lay)
-      }
-
-      self$lays <- mapply(exp_weights, dwt_list, self$lays)
-
-      # now set the contrast-enhanced version of the weights
+      private$set_new_exp_bounded_wts(dwt_list)
       lapply(self$lays, function(x) x$set_ce_weights(private$off, private$gain))
       invisible(self)
-    },
-
-    get_dwt = function(x, th){
-      f <- rep(0, length(x))
-      idx1 <- (x > private$d_thr) & (x < private$d_rev * th)
-      idx2 <- x >= private$d_rev * th
-      f[idx1] <- private$get_m1() * x[idx1]
-      f[idx2] <- x[idx2] - th[idx2]
-      return(f)
     },
 
     reset = function(random = F){
@@ -306,10 +208,6 @@ network <-  R6::R6Class("network",
       invisible(self)
     },
 
-    #' set_weights sets new weights
-    #'
-    #' @param w matrix of matrices with new weight values
-    #' @rdname network
     set_weights = function(w){
       # This function receives a cell array w, which is like the cell array
       # w_init in the constructor: w{i,j} is the weight matrix with the initial
@@ -322,14 +220,14 @@ network <-  R6::R6Class("network",
       w_empty <- matrix(sapply(w, isempty), nrow = nrow(w))
 
       private$is_dim_w_init_equal_to_dim_cxn(w)
-      private$connected_layers_have_weight_matrix()
-      private$non_connected_layers_do_not_have_weight_matrix()
+      private$connected_lays_have_weight_matrix()
+      private$non_connected_lays_do_not_have_weight_matrix()
 
       private$all_layer_dims_correspond_width_weight_matrix_dims()
 
       ## Now we set the weights
       # first find how many units project to the layer in all the network
-      lay_inp_n <- apply(private$n_units_in_receiving_layers, 1, sum)
+      lay_inp_n <- apply(private$n_units_in_rcv_lays, 1, sum)
 
       # make one weight matrix for every layer by collapsing receiving layer
       # weights columnwise, only do this for layers that receive something at all
@@ -342,26 +240,35 @@ network <-  R6::R6Class("network",
       invisible(self)
     },
 
-    #' get_weights returns a matrix of weight matrices, w[rcv, snd] contains the
-    #' weight matrix for the projections from layer snd to layer rcv
-    #'
-    #' @rdname network
     get_weights = function(){
-      # extract for connected layers the weights with the index
-      helper <- function(cxn, lower, upper, lay){
-        ifelse(cxn > 0, return(lay$wt[, lower:upper]), return(NULL))
-      }
-      w <- matrix(Map(helper, private$cxn,
-                      private$w_index_low,
-                      private$w_index_up, self$lays),
+      w <- matrix(Map(private$get_weight_for_one_connection, private$cxn,
+                      private$w_index_low, private$w_index_up, self$lays),
                   ncol = ncol(private$w_index_low))
     },
+
+    get_weight_for_one_connection = function(cxn, lower, upper, lay){
+      ifelse(cxn > 0, return(lay$wt[, lower:upper]), return(NULL))
+    },
+
     # fields -------------------------------------------------------------------
     lrate = 0.1,  # learning rate for XCAL
     lays = list()
     ),
   # private --------------------------------------------------------------------
   private = list(
+    # get weight cahnges with the "check mark" function in XCAL
+    # x vector of abscissa values
+    #
+    # th vector of threshold values with the same size as x
+    get_dwt = function(x, th){
+      f <- rep(0, length(x))
+      idx1 <- (x > private$d_thr) & (x < private$d_rev * th)
+      idx2 <- x >= private$d_rev * th
+      f[idx1] <- private$get_m1() * x[idx1]
+      f[idx2] <- x[idx2] - th[idx2]
+      return(f)
+    },
+
     # updates the acts_p_avg and pct_act_scale variables for all lays.
     # These variables update at the end of plus phases instead of
     # cycle by cycle. The avg_l values are not updated here.
@@ -383,51 +290,54 @@ network <-  R6::R6Class("network",
       return(m)
     },
     # subfunctions for constructor----------------------------------------------
-    has_every_layer_gi = function(gi, dim_lays){
-      if (length(gi) != length(dim_lays)){
-        error <- paste("You have to specify gi for every layer, your gi vector
-                       has length", length(gi), "but you have ", n_lays,
-                       " layers.")
+    has_every_layer_g_i_gain = function(){
+      if (length(private$g_i_gain) != length(private$dim_lays)){
+        error <- paste("You have to specify g_i_gain for every layer, your
+                       g_i_gain vector has length", length(private$g_i_gain),
+                       "but you have ", private$n_lays, " layers.")
         stop(error)
       }
 
     },
     # first argument test in constructor ---------------------------------------
-    test_argument_dimensions = function(dim_lays, w_init){
-        private$is_cxn_quadratic()
-        private$is_nrow_cxn_equal_to_n_lays(dim_lays)
-        private$is_dim_w_init_equal_to_dim_cxn(w_init)
-        private$are_there_negative_cxn()
+    test_argument_dimensions = function(){
+      private$has_every_layer_g_i_gain()
+      private$is_cxn_quadratic()
+      private$is_nrow_cxn_equal_to_n_lays()
+      private$is_dim_w_init_equal_to_dim_cxn()
+      private$are_there_negative_cxn()
     },
 
     is_cxn_quadratic = function(){
       if (nrow(private$cxn) != ncol(private$cxn)){
         error <- (paste("Cannot create network. Connection matrix must have the
-                        same number of rows and columns. It has ", nrow(private$cxn), "
-                        rows and ", ncol(private$cxn), " columns.", sep = ""))
+                        same number of rows and columns. It has ",
+                        nrow(private$cxn), " rows and ", ncol(private$cxn), "
+                        columns.", sep = ""))
         stop(error)
       }
     },
 
-    is_nrow_cxn_equal_to_n_lays = function(dim_lays){
-      if (nrow(private$cxn) != length(dim_lays)){
-        error <- (paste("Cannot create network. You have ", length(dim_lays), " layer(s) and
-                        ", nrow(private$cxn), " rows in the ", "connection matrix. You
-                        need to specify cxn for every layer, so the number of
-                        rows and columns in the connection matrix must equal the
-                        number of layers.", sep = ""))
+    is_nrow_cxn_equal_to_n_lays = function(){
+      if (nrow(private$cxn) != length(private$dim_lays)){
+        error <- (paste("Cannot create network. You have ",
+                        length(private$dim_lays), " layer(s) and ",
+                        nrow(private$cxn), " rows in the ", "connection matrix.
+                        You need to specify cxn for every layer, so the number
+                        of rows and columns in the connection matrix must equal
+                        the number of layers.", sep = ""))
         stop(error)
       }
     },
 
-    is_dim_w_init_equal_to_dim_cxn = function(w_init){
-      if (sum(dim(w_init) == dim(private$cxn)) < 2){
+    is_dim_w_init_equal_to_dim_cxn = function(){
+      if (sum(dim(private$w_init) == dim(private$cxn)) < 2){
         error <- paste("Cannot create network. You have an initial matrix of
-                        weight matrices with dimensions of ",
-                        paste(dim(w_init), collapse = ", "),
-                        ", and a connection matrix with dimensions of ",
-                        paste(dim(private$cxn), collapse = ", "), ". They have to be
-                        identical.", sep = "")
+                       weight matrices with dimensions of ",
+                       paste(dim(private$w_init), collapse = ", "), ", and a
+                       connection matrix with dimensions of ",
+                       paste(dim(private$cxn), collapse = ", "), ". They have to
+                       be identical.", sep = "")
         stop(error)
       }
     },
@@ -435,42 +345,43 @@ network <-  R6::R6Class("network",
     are_there_negative_cxn = function(){
       if (min(private$cxn) < 0){
         error <- paste("Cannot create network. Negative projection strengths
-                        between layers are not allowed in cxn matrix.")
+                       between layers are not allowed in cxn matrix.")
         stop(error)
       }
     },
 
-    normalize_rcv_cxn = function(){
-      private$cxn <- t(apply(private$cxn, 1, function(x) if(sum(x) > 0) x / sum(x) else x))
+    normalize_cxn = function(){
+      private$cxn <- plyr::aaply(private$cxn, 1, function(x) if(sum(x) > 0) x / sum(x) else x)
     },
 
-    create_layers = function(dim_lays, gi){
-      self$lays <- mapply(function(dim_lays, gi) layer$new(dim_lays, gi), dim_lays, gi)
+    create_lays = function(){
+      self$lays <- mapply(function(x, y) layer$new(x, y), private$dim_lays,
+                          private$g_i_gain)
       Map(function(x, y) x$layer_number <- y, self$lays, 1:length(self$lays))
     },
 
     set_all_unit_numbers = function(){
-      private$n_units_in_layers <- sapply(self$lays, function(x) x$n)
-      private$n_units_in_net <- Reduce("+", private$n_units_in_layers)
-      private$get_n_units_in_receiving_layers()
-      private$get_n_units_in_sending_layers()
+      private$n_units_in_lays <- sapply(self$lays, function(x) x$n)
+      private$n_units_in_net <- Reduce("+", private$n_units_in_lays)
+      private$set_n_units_in_rcv_lays()
+      private$set_n_units_in_send_lays()
     },
 
-    get_n_units_in_receiving_layers = function(){
-      result <- matrix(rep(private$n_units_in_layers,
-                 length(private$n_units_in_layers)
-        ), ncol = length(private$n_units_in_layers), byrow = T
+    set_n_units_in_rcv_lays = function(){
+      result <- matrix(rep(private$n_units_in_lays,
+                 length(private$n_units_in_lays)
+        ), ncol = length(private$n_units_in_lays), byrow = T
       )
-      result <- result * private$is_cxn_greater_zero
-      private$n_units_in_receiving_layers <- result
+      result <- result * private$cxn_greater_zero
+      private$n_units_in_rcv_lays <- result
     },
 
-    get_n_units_in_sending_layers = function(){
-      result <- matrix(rep(private$n_units_in_layers,
-                           length(private$n_units_in_layers)),
-           ncol = length(private$n_units_in_layers))
-      result <- result * private$is_cxn_greater_zero
-      private$n_units_in_sending_layers <- result
+    set_n_units_in_send_lays = function(){
+      result <- matrix(rep(private$n_units_in_lays,
+                           length(private$n_units_in_lays)),
+           ncol = length(private$n_units_in_lays))
+      result <- result * private$cxn_greater_zero
+      private$n_units_in_send_lays <- result
     },
 
     # second argument test in constructor---------------------------------------
@@ -480,7 +391,13 @@ network <-  R6::R6Class("network",
             function(x) paste("[", paste(x, collapse = ", "), "] ", sep = ""))
     },
 
-    connected_layers_have_weigth_matrix = function(){
+    second_test_argument_dimensions = function(){
+      private$connected_lays_have_weigth_matrix()
+      private$non_connected_lays_do_not_have_weight_matrix()
+      private$all_layer_dims_correspond_with_weight_matrix_dims()
+    },
+
+    connected_lays_have_weigth_matrix = function(){
       cxn_no_w <- private$cxn > 0 & private$w_init_empty
       if (sum(cxn_no_w) > 0) {
         stop(paste("Connected layers have no weight matrix. Check thefollowing
@@ -490,7 +407,7 @@ network <-  R6::R6Class("network",
       }
     },
 
-    non_connected_layers_do_not_have_weight_matrix = function(){
+    non_connected_lays_do_not_have_weight_matrix = function(){
       w_no_cxn <- private$cxn == 0 & !private$w_init_empty
       if (sum(w_no_cxn) > 0) {
         stop(paste("Non-Connected layers have weight matrix. Check the following
@@ -502,7 +419,7 @@ network <-  R6::R6Class("network",
 
     is_ext_inputs_valid = function(){
       private$is_ext_inputs_a_list()
-      private$is_length_ext_inputs_equal_to_n_layers()
+      private$is_length_ext_inputs_equal_to_n_lays()
     },
 
     is_ext_inputs_a_list = function(){
@@ -512,7 +429,7 @@ network <-  R6::R6Class("network",
       }
     },
 
-    is_length_ext_inputs_equal_to_n_layers = function(){
+    is_length_ext_inputs_equal_to_n_lays = function(){
       if (length(private$ext_inputs) != private$n_lays){
         stop(paste("Number of layers inconsistent with number of inputs in
                    network cycle. If a layer should not have an input, just use
@@ -524,8 +441,8 @@ network <-  R6::R6Class("network",
       w_dim_lay_dim <- mapply(
         private$one_layer_dim_corresponds_with_weight_matrix_dim,
         private$w_init,
-        private$n_units_in_sending_layers,
-        private$n_units_in_receiving_layers)
+        private$n_units_in_send_lays,
+        private$n_units_in_rcv_lays)
       w_dim_lay_dim <- matrix(w_dim_lay_dim, nrow = nrow(private$w_init))
 
       if (sum(w_dim_lay_dim) < length(w_dim_lay_dim))
@@ -536,20 +453,94 @@ network <-  R6::R6Class("network",
     },
 
     one_layer_dim_corresponds_with_weight_matrix_dim =
-      function(w_init,lay_n_recv, lay_n_send){
-        if (isempty(w_init) & lay_n_recv == 0 & lay_n_send == 0){
+      function(w_init,lay_n_rcv, lay_n_send){
+        if (isempty(w_init) & lay_n_rcv == 0 & lay_n_send == 0){
           return(T)
         }
-        sum(dim(w_init) == c(lay_n_recv, lay_n_send)) == 2
+        sum(dim(w_init) == c(lay_n_rcv, lay_n_send)) == 2
     },
 
-
     # other --------------------------------------------------------------------
-    set_all_layers_to_ext_inputs = function(){
+    clamp_ext_inputs = function(){
       Map(function(x, y) if (!is.null(y)) x$clamp_cycle(y), self$lays,
           private$ext_inputs)
     },
 
+    create_wt_for_lays = function(){
+      wts <- apply(private$w_init, 1, function(x) Reduce("cbind", x))
+      Map(function(x, y) if(!isempty(y)) x$wt <- y, self$lays, wts)
+      lapply(self$lays, function(x) x$set_ce_weights(private$off, private$gain))
+    },
+
+    set_all_w_vars = function(){
+      private$w_init_empty = matrix(sapply(private$w_init, isempty),
+                                     nrow = nrow(private$w_init))
+      private$w_index_low <- plyr::aaply(private$n_units_in_rcv_lays, 1,
+                                         function(x) head(c(1, cumsum(x) + 1), -1))
+      private$w_index_up <- plyr::aaply(private$n_units_in_rcv_lays, 1,
+                                        function(x) cumsum(x))
+    },
+
+    find_intern_inputs = function(){
+      activeness_scaled_acts <- lapply(self$lays, function(x) x$get_unit_scaled_acts())
+      rcv_lays_cxn <- unlist(apply(private$cxn, 1, list), recursive = F)
+      lapply(rcv_lays_cxn, private$cxn_scale_acts, activeness_scaled_acts)
+    },
+
+    cxn_scale_acts = function(rcv_lay_cxn, activeness_scaled_acts){
+      unlist(c(private$mult_list_vec(activeness_scaled_acts[rcv_lay_cxn > 0],
+                                     rcv_lay_cxn[rcv_lay_cxn > 0])))
+    },
+
+    cycle_with_one_unclamped_lay = function(lay, intern_inputs, ext_inputs,
+                                            lay_unclamped){
+      if (lay_unclamped) lay$cycle(intern_inputs, ext_inputs)
+    },
+
+    cycle_with_unclamped_lays = function(intern_inputs, ext_inputs,
+                                         lays_unclamped){
+      Map(private$cycle_with_one_unclamped_lay, self$lays, intern_inputs,
+          ext_inputs, lays_unclamped)
+    },
+
+    set_new_exp_bounded_wts = function(dwt_list){
+      mapply(private$set_new_exp_bounded_wts_for_one_lay, dwt_list, self$lays)
+    },
+
+    set_new_exp_bounded_wts_for_one_lay = function(dwt, lay){
+      if (!isempty(lay$wt)){
+        lay$wt <- ifelse(dwt > 0,
+                         lay$wt + (1 - lay$wt) * dwt,
+                         lay$wt + lay$wt * dwt)
+      }
+    },
+
+    get_snd_avg = function(avg, is_cxn_null){
+      avg <- matrix(rep(avg, length(avg)), ncol = length(avg), byrow = T)
+      private$m_mapply(function(x, y) x * y, is_cxn_null, avg)
+    },
+
+    get_rcv_avg = function(avg, is_cxn_null){
+      avg <- matrix(rep(avg, length(avg)), ncol = length(avg), byrow = F)
+      private$m_mapply(function(x, y) x * y, is_cxn_null, avg)
+    },
+
+    # mult_list_vec
+    #
+    # multiplies a list of vectors with constants from a vector with the length
+    # of
+    # the list
+    mult_list_vec = function(x, y){
+      mapply("*", x, y)
+    },
+
+    # m_mapply
+    #
+    # mapply version for matrix of matrices (matlab cell arrays), returns a
+    # matrix
+    m_mapply = function(fun, x, y){
+      matrix(mapply(fun, x, y), ncol = ncol(x))
+    },
 
     # fields --------------------------
     dim_lays = list(),
@@ -557,7 +548,7 @@ network <-  R6::R6Class("network",
     w_init = matrix(),
     n_lays = NULL,  # number of lays (number of objs in "lays")
     n_units_in_net = NULL,
-    n_units_in_layers = NULL,
+    n_units_in_lays = NULL,
 
     # constants
     avg_l_lrn_max = 0.01, # max amount of "BCM" learning in XCAL
@@ -569,13 +560,13 @@ network <-  R6::R6Class("network",
     off = 1, # "offset" in the SIG function for contrast enhancement
     gain = 6, # gain in the SIG function for contrast enhancement
 
-    gi = 2, # gi for layers, to control overall inhibition in a specific layer
+    g_i_gain = 2, # g_i_gain for layers, to control overall inhibition in a specific layer
     avg_l_lrn = list(),
     #dependent
     m1 = NULL, # the slope in the left part of XCAL's "check mark"
-    is_cxn_greater_zero = matrix(), # binary version of cxn
-    n_units_in_receiving_layers = matrix(), # number of units of receiving layer in cxn matrix
-    n_units_in_sending_layers = matrix(), # number of units of sending layer in cxn matrix
+    cxn_greater_zero = matrix(), # binary version of cxn
+    n_units_in_rcv_lays = matrix(), # number of units of receiving layer in cxn matrix
+    n_units_in_send_lays = matrix(), # number of units of sending layer in cxn matrix
     w_index_low = matrix(), # lower index to extract weights from layer matrix
     # in cxn format
     w_index_up = matrix(), # upper index to extract weights from layer matrix in
