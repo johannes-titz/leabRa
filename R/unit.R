@@ -56,6 +56,8 @@ NULL
 #'   represents minus phase learning signal
 #' @field avg_l long-term running average activation, integrates over avg_m,
 #'   drives long-term floating average for self-organized learning
+#' @field unit_number number of unit in layer, if there is only one unit, this
+#'   value will be 1
 #'
 #' @section Methods:
 #' \describe{
@@ -68,7 +70,7 @@ NULL
 #'   activity of those other units. Inhibitory conductance depends on
 #'   feedforward and feedback inhibition. See layer cycle method.}
 #'
-#'   \item{\code{clamp_cycle(activation)}}{Clamps the value of \code{activation}
+#'   \item{\code{clamp_cycle(act)}}{Clamps the value of \code{act}
 #'   to the \code{act} variable of the unit without any time integration. Then
 #'   updates averages. This is usually done when presenting external input.}
 #'
@@ -90,14 +92,15 @@ unit <- R6::R6Class("unit",
   # public ---------------------------------------------------------------------
   public = list(
     initialize = function(){
-      private$nxx1_df <- create_nxx1()
+      private$nxx1_df <- private$create_nxx1()
     },
+
     cycle = function(g_e_raw, g_i){
-      ## updating g_e input
+      # updating g_e input
       private$g_e <- private$g_e + private$cyc_dt * private$g_e_dt *
         (g_e_raw - private$g_e)
 
-      ## Finding membrane potential
+      # Finding membrane potential
       # excitatory, inhibitory and leak current
       i_e <- private$g_e * (private$v_rev_e - private$v)
       i_i <- g_i * (private$v_rev_i - private$v)
@@ -117,7 +120,7 @@ unit <- R6::R6Class("unit",
       private$v_eq <- private$v_eq + private$cyc_dt * private$v_dt *
         (i_net_h - private$i_adapt)
 
-      ## Finding activation
+      # Finding activation
       # finding threshold excitatory conductance
       g_e_thr <- (g_i * (private$v_rev_i - private$v_thr) +
                     private$g_l * (private$v_rev_l - private$v_thr) -
@@ -142,38 +145,35 @@ unit <- R6::R6Class("unit",
       self$act <- self$act + private$cyc_dt * private$v_dt *
         (new_act - self$act)
 
-      ## Updating adaptation current
+      # Update adaptation current
       private$i_adapt <- private$i_adapt + private$cyc_dt *
         (private$i_adapt_dt * (private$v_gain * (private$v - private$v_rev_l)
                                - private$i_adapt)
          + private$spike * private$spike_gain_adapt)
 
-      private$update_averages()
+      private$updt_avgs()
       invisible(self)
     },
 
-    clamp_cycle = function(activation){
-      ## Clamping the activty to the activation
-      self$act <- activation
-      private$update_averages()
+    clamp_cycle = function(act){
+      self$act <- act
+      private$updt_avgs()
       invisible(self)
     },
 
     updt_avg_l = function(){
-        if (self$avg_m > 0.2){
-          self$avg_l <- self$avg_l + private$l_dt *
-            (private$avg_l_max - self$avg_m)
+      if (self$avg_m > 0.2){
+        self$avg_l <- self$avg_l + private$l_dt *
+          (private$avg_l_max - self$avg_m)
         } else{
           self$avg_l <- self$avg_l + private$l_dt *
             (private$avg_l_min - self$avg_m)
-        }
-        invisible(self)
-      },
+          }
+      invisible(self)
+    },
 
     reset = function(random = F){
-      ifelse(random == T, self$act <- 0.05 + 0.9 * runif(1),
-             self$act <- 0)
-      # does this influence pct_act_rel?
+      ifelse(random == T, self$act <- 0.05 + 0.9 * runif(1), self$act <- 0)
       private$avg_ss <- self$act
       self$avg_s <- self$act
       self$avg_m <- self$act
@@ -185,7 +185,7 @@ unit <- R6::R6Class("unit",
       private$spike <- 0
       invisible(self)
     },
-    # return a data frame with all variables
+
     get_vars = function(show_dynamics = T, show_constants = F){
       df <- data.frame(unit = self$unit_number)
       dynamic_vars <- data.frame(
@@ -201,6 +201,7 @@ unit <- R6::R6Class("unit",
         i_adapt = private$i_adapt,
         spike = private$spike
       )
+
       constant_vars <-
         data.frame(
           cyc_dt           = private$cyc_dt,
@@ -226,6 +227,7 @@ unit <- R6::R6Class("unit",
       if (show_constants == T) df <- cbind(df, constant_vars)
       return(df)
     },
+
     # fields -------------------------------------------------------------------
     act = 0.2,
     avg_s = 0.2,
@@ -235,54 +237,74 @@ unit <- R6::R6Class("unit",
     # one, otherwise the layer will set this value
     unit_number = 1
   ),
+
   # active ---------------------------------------------------------------------
   active = list(
-    avg_l_prc = function() {
+    avg_l_prc = function(){
       (self$avg_l - private$avg_l_min) / (private$avg_l_max - private$avg_l_min)
     }
   ),
+
   # private --------------------------------------------------------------------
-  # \item{\code{nxx1(x)}}{Calculates the activation of a unit as a function of v or g_e and their thresholds}}
+  # nxx1
+  #
+  # calculates the activation of a unit as a function of the difference between
+  # v and its threshold or g_e and its threshold
+  #
   private = list(
     nxx1 = function(x){
       # nxx1_df is a df that is used as a lookup-table, it is stored internally
       # but you can generate the data with the create_nxx1 function
-      closest_value <- which(abs(private$nxx1_df$nxx1_dom-x) ==
-                               min(abs(private$nxx1_df$nxx1_dom-x)))
-      private$nxx1_df$nxoxp1[closest_value]
-      #approx(private$nxx1_df$nxx1_dom, private$nxx1_df$nxoxp1, x,
-      #       method = "constant", rule = 2)$y
-    },
+      approx(private$nxx1_df$nxx1_dom, private$nxx1_df$nxoxp1, x,
+             method = "linear", rule = 2)$y
+  },
 
-    create_nxx1 = function(){
-      # we don't have precalculated vectors for interpolation
-      n_x <- 2000 # size of the precalculated vectors
-      mid <- 2 # mid length of the domain
-      domain <- seq(-mid, mid, length.out = n_x) # will be "nxx1_dom"
-      # domain of Gaussian
-      dom_g <- seq(-2 * mid, 2 * mid, length.out = 2 * n_x)
-      values <- rep(0, n_x) # will be "nxoxp1"
-      sd <- .005 # standard deviation of the Gaussian
-      gaussian <- exp(- (dom_g ^ 2) / (2 * sd ^ 2)) / (sd * sqrt(2 * pi))
+  # create_nxx1
+  #
+  # calculates the noisy x/(x+1) function. The values come from
+  # the convolution of x/(x+1) with a Gaussian function. To avoid calculating
+  # the convolution every time, the constructor creates a lookup table
+  # nxx1_df, corresponding to the values of nxx1 at all the x in the vector
+  # "nxx1_dom". Once these vectors are in the workspace, subsequent calls to
+  # nxx1 use interpolation with these vectors in order to calculate their
+  # return values. Unfortunately this interpolation is very slow. This is
+  # currently the bottleneck of the simulation
+  #
+  create_nxx1 = function(){
+    # we don't have precalculated vectors for interpolation
+    n_x <- 2000 # size of the precalculated vectors
+    mid <- 2 # mid length of the domain
+    domain <- seq(-mid, mid, length.out = n_x) # will be "nxx1_dom"
+    # domain of Gaussian
+    dom_g <- seq(-2 * mid, 2 * mid, length.out = 2 * n_x)
+    values <- rep(0, n_x) # will be "nxoxp1"
+    sd <- .005 # standard deviation of the Gaussian
+    gaussian <- exp(-(dom_g ^ 2) / (2 * sd ^ 2)) / (sd * sqrt(2 * pi))
 
-      XX1 <- function(x, gain = 100){
-        x[x <= 0] <- 0
-        x[x > 0] <- gain * x[x > 0] / (gain * x[x > 0] + 1) # gain = 100 default
-        return(x)
-      }
+    XX1 <- function(x, gain = 100){
+      x[x <= 0] <- 0
+      x[x > 0] <- gain * x[x > 0] / (gain * x[x > 0] + 1) # gain = 100 default
+      return(x)
+    }
 
-      for (p in 1:n_x){
-        low <- n_x - p + 1
-        high <- 2 * n_x - p
-        values[p] <- sum(XX1(domain) * gaussian[low:high])
-        values[p] <- values[p] / sum(gaussian[low:high])
-      }
-      nxx1_dom <- domain
-      nxoxp1 <- values
-      as.data.frame(cbind(nxoxp1, nxx1_dom))
-    },
-
-    update_averages = function(){
+    for (p in 1:n_x){
+      low <- n_x - p + 1
+      high <- 2 * n_x - p
+      values[p] <- sum(XX1(domain) * gaussian[low:high])
+      values[p] <- values[p] / sum(gaussian[low:high])
+    }
+    nxx1_dom <- domain
+    nxoxp1 <- values
+    as.data.frame(cbind(nxoxp1, nxx1_dom))
+  },
+  # updt_avgs
+  #
+  # updates the average super short, short and medium activities of the unit,
+  # called by cycle and clamped_cycle. Note that long term average is not
+  # updated
+  # here; long term average is updated before weight changes.
+  #
+  updt_avgs = function(){
     private$avg_ss <- private$avg_ss + private$cyc_dt * private$ss_dt *
       (self$act - private$avg_ss)
     self$avg_s <- self$avg_s + private$cyc_dt * private$s_dt *
@@ -290,16 +312,18 @@ unit <- R6::R6Class("unit",
     self$avg_m <- self$avg_m + private$cyc_dt * private$m_dt *
       (self$avg_s - self$avg_m)
     invisible(self)
-    },
+  },
+
   # fields ---------------------------------------------------------------------
-  # dynamic values
+  # dynamic values--------------------------------------------------------------
   avg_ss = 0.2,
   g_e = 0,
   v = 0.3,
   v_eq = 0.3,
   i_adapt = 0,
   spike = 0,
-  # constant values
+
+  # constant values-------------------------------------------------------------
   # time step constants
   g_e_dt = 1 / 1.4,     # time step constant for update of "g_e"
   cyc_dt = 1,           # time step constant for integration of cycle dynamics
@@ -308,7 +332,8 @@ unit <- R6::R6Class("unit",
   ss_dt = 0.5,          # time step constant for super-short average
   s_dt = 0.5,           # time step constant for short average
   m_dt = 0.1,           # time step constant for medium-term average
-  l_dt = 0.1,       # time step constant for long-term average
+  l_dt = 0.1,           # time step constant for long-term average
+
   # other
   avg_l_max = 1.5,      # max value of avg_l
   avg_l_min = 0.1,      # min value of avg_l
