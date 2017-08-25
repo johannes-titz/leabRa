@@ -256,7 +256,7 @@ unit <- R6::R6Class("unit",
       # nxx1_df is a df that is used as a lookup-table, it is stored internally
       # but you can generate the data with the create_nxx1 function
       approx(private$nxx1_df$nxx1_dom, private$nxx1_df$nxoxp1, x,
-             method = "linear", rule = 2)$y
+             method = "constant", rule = 2)$y
   },
 
   # create_nxx1
