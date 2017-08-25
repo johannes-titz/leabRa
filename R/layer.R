@@ -151,6 +151,7 @@ layer <- R6::R6Class("layer",
       Map(function(x, y) x$unit_number <- y, self$units, 1:self$n)
       # recip_avg_act_n is initialized with number of units that are > 0.4
       # (n_act_lrgr_forty)
+      private$g_i_gain <- g_i_gain
       private$avg_act_inert <- self$avg_act
       n_act_lrgr_forty <- max(c(sum(self$get_unit_acts() > 0.4), 1))
       private$recip_avg_act_n <- 1 / (n_act_lrgr_forty + 2)
