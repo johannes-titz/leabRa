@@ -118,7 +118,7 @@ network <-  R6::R6Class("network",
     initialize = function(dim_lays, cxn,
                           lrate = 0.1,
                           g_i_gain = rep(2, length(dim_lays)),
-                          w_init_fun = function(x) runif(x),
+                          w_init_fun = function(x) 0.3 + 0.4 * runif(x),
                           w_init = NULL
     ){
       private$dim_lays <- dim_lays
@@ -127,7 +127,6 @@ network <-  R6::R6Class("network",
       private$normalize_cxn()
       private$cxn_greater_zero <- apply(private$cxn, c(1, 2),
                                         function(x) ifelse(x > 0, 1, 0))
-
 
       private$g_i_gain <- g_i_gain
       self$lrate <- lrate
@@ -279,12 +278,129 @@ network <-  R6::R6Class("network",
                   ncol = ncol(private$w_index_low))
     },
 
+    get_layer_and_unit_vars = function(){
+
+    },
+
+    create_inputs = function(which_layers, n_inputs, prop_active = 0.3){
+      lapply(1:n_inputs, function(x)
+        private$create_one_input(private$dim_lays, which_layers, prop_active))
+    },
+
+    learn_error_driven = function(inputs_minus, inputs_plus, lrate = 0.1,
+                                  n_cycles_minus = 50, n_cycles_plus = 25){
+
+      outs <- mapply(private$learn_one_pattern_error_driven,
+                     inputs_minus,
+                     inputs_plus,
+                     pattern_number = seq(length(inputs_minus)),
+                     MoreArgs = list(n_cycles_minus = n_cycles_minus,
+                                     n_cycles_plus = n_cycles_plus,
+                                     lrate = lrate,
+                                     number_of_patterns = length(inputs_minus)))
+      return(outs)
+    },
+
     # fields -------------------------------------------------------------------
     lrate = 0.1,  # learning rate for XCAL
     lays = list()
   ),
   # private --------------------------------------------------------------------
   private = list(
+    # trial
+    #
+    # runs several cycles with one input (for all layers)
+    #
+    # input is a list with the length being the number of layers
+    #
+    # lrate is the learning rate
+    #
+    # clamp_inp whether input should be clamped
+    #
+    # reset whether the network should be reset to a stationary point before
+    # cycling (this can be extended by using the the random parameter in reset
+    # if one wants random activations)
+    #
+    # returns invisible self
+    run_trial = function(input, n_cycles, lrate = 0.1, reset = F){
+      self$lrate <- lrate
+      if (reset == T) self$reset()
+      for(i in seq(n_cycles)) self$cycle(input, clamp_inp = T)
+      invisible(self)
+    },
+
+    # learn_one_pattern_error_driven
+    #
+    # it does what it says, learning a pattern in error driven style
+    #
+    # input_minus one input for all layers, without the correct output
+    #
+    # input_plus one input for all layers, with correct output
+    #
+    # n_cycles_minus number of cycles for minus phase
+    #
+    # n_cycles_plus number of cycles for plus phase
+    #
+    # lrate learning rate
+    #
+    # clamp_inp whether input should be clamped
+    #
+    # reset whether the network should be reset to a stationary point before
+    # cycling (this can be extended by using the the random parameter in reset
+    # if one wants random activations)
+    #
+    # returns activties of all units after minus phase (before learning)
+    learn_one_pattern_error_driven = function(input_minus, input_plus,
+                                              pattern_number,
+                                              number_of_patterns,
+                                              n_cycles_minus = 50,
+                                              n_cycles_plus = 25,
+                                              lrate = 0.1,
+                                              reset = T){
+      # minus phase
+      private$run_trial(input_minus, n_cycles_minus, lrate = lrate,
+                        reset = reset)
+
+      output <- lapply(self$lays, function(x) x$get_unit_acts())
+
+      # plus phase, do not reset the network!
+      private$run_trial(input_plus, n_cycles_plus, lrate = lrate, reset = F)
+
+      # change weights
+      self$chg_wt()
+
+      # show progress
+      if (pattern_number == number_of_patterns) {
+        cat(".\n")
+      } else {
+          cat(".")
+      }
+      return(output)
+    },
+
+    # functions to create random inputs
+    create_one_input = function(dim_lays, which_layers, prop_active = 0.3){
+      prob <- c(prop_active, 1 - prop_active)
+      #n_units <- lapply(dim_lays, function(x) x[1] * x[2])
+      inputs <- mapply(private$create_one_input_for_one_layer,
+                       private$n_units_in_lays,
+                       private$inv_which(which_layers, private$n_lays),
+                       MoreArgs = list(prob = prob))
+      inputs
+    },
+
+    inv_which = function(indices, totlength){
+      is.element(seq_len(totlength), indices)
+    },
+
+    create_one_input_for_one_layer = function(n, has_layer_input, prob){
+      result <- ifelse(has_layer_input,
+                       return(sample(c(.96, 0.01), n, replace = T,
+                                     prob = prob)),
+                       return(NULL))
+      return(result)
+    },
+
     # functions to create random weights
     create_rnd_wt_matrix = function(fun = runif){
       private$w_init <- matrix(mapply(private$create_wt_matrix_for_one_cxn,
@@ -407,7 +523,8 @@ network <-  R6::R6Class("network",
       private$w_init_empty = matrix(sapply(private$w_init, isempty),
                                     nrow = nrow(private$w_init))
       private$w_index_low <- plyr::aaply(private$n_units_in_rcv_lays, 1,
-                                         function(x) head(c(1, cumsum(x) + 1), -1))
+                                         function(x) head(c(1, cumsum(x) + 1),
+                                                          -1))
       private$w_index_up <- plyr::aaply(private$n_units_in_rcv_lays, 1,
                                         function(x) cumsum(x))
     },
