@@ -255,8 +255,13 @@ unit <- R6::R6Class("unit",
     nxx1 = function(x){
       # nxx1_df is a df that is used as a lookup-table, it is stored internally
       # but you can generate the data with the create_nxx1 function
-      approx(private$nxx1_df$nxx1_dom, private$nxx1_df$nxoxp1, x,
-             method = "constant", rule = 2)$y
+      closest_value <- which(abs(private$nxx1_df$nxx1_dom-x) ==
+                               min(abs(private$nxx1_df$nxx1_dom-x)))
+      private$nxx1_df$nxoxp1[closest_value[1]]
+
+      # if you want to use interpolation (but this is very slow)
+      #approx(private$nxx1_df$nxx1_dom, private$nxx1_df$nxoxp1, x,
+      #       method = "linear", rule = 2)$y
   },
 
   # create_nxx1
