@@ -93,25 +93,40 @@ NULL
 #'     \code{w} matrix of matrices (like a cell array in matlab) with new weight
 #'     values}
 #'
-#'   \item{\code{get_unit_vars(show_dynamics = T, show_constants = F)}}{Returns
-#'   a data frame with with the current state of all unit variables in the
-#'   layer. Every row is a unit. You can choose whether you want dynamic values
-#'   and / or constant values. This might be useful if you want to analyse what
-#'   happens in units of a layer, which would otherwise not be possible, because
-#'   most of the variables (fields) are private in unit class.}
-#'
-#'   \item{\code{get_layer_vars(show_dynamics = T, show_constants = F)}}{Returns
-#'   a data frame with 1 row with the current state of the variables in the
-#'   layer.  You can choose whether you want dynamic values and / or constant
-#'   values. This might be useful if you want to analyse what happens in a
-#'   layer, which would otherwise not be possible, because some of the variables
-#'   (fields) are private in the layer class.}
-#'
 #'   \item{\code{get_weights()}}{Returns the complete weight matrix,
 #'   \code{w[rcv, snd]} contains the weight matrix for the projections from
 #'   layer \code{snd} to layer \code{rcv}. Note that this is a matrix of
 #'   matrices (equivalent to a matlab cell array.)}
 #'
+#'   \item{\code{get_layer_and_unit_vars(show_dynamics = T, show_constants =
+#'   F)}}{Returns a data frame with with the current state of all layer and unit
+#'   variables Every row is a unit. You can choose whether you want dynamic
+#'   values and / or constant values. This might be useful if you want to
+#'   analyse what happens in the network overall, which would otherwise not be
+#'   possible, because most of the variables (fields) are private in the layer
+#'   and unit class.}
+#'
+#'   \item{\code{get_network_vars(show_dynamics = T, show_constants = F)}}{Returns
+#'   a data frame with 1 row with the current state of the variables in the
+#'   network  You can choose whether you want dynamic values and / or constant
+#'   values. This might be useful if you want to analyse what happens in a
+#'   layer, which would otherwise not be possible, because some of the variables
+#'   (fields) are private in the network class.}
+#'
+#'   \item{\code{create_inputs(which_layers, n_inputs, prop_active = 0.3)}}{Returns
+#'   a list of length \code{n_inputs} with random input patterns (either 0.05,
+#'   or. 0.95) for the layers specified in \code{which_layer}. All other layers
+#'   will have an input of NULL
+#'
+#'     \code{which_layers} vector of layer numbers, for which you want to create
+#'     random inputs
+#'     
+#'     \code{n_inputs} single numeric value, how many inputs should be created
+#'     
+#'     \code{prop_active} average proportion of active units in the input
+#'     patterns, default is 0.3}
+#'
+#'  }
 #' }
 network <-  R6::R6Class("network",
   public = list(
@@ -278,8 +293,39 @@ network <-  R6::R6Class("network",
                   ncol = ncol(private$w_index_low))
     },
 
-    get_layer_and_unit_vars = function(){
+    get_layer_and_unit_vars = function(show_dynamics = T, show_constants = F){
+      unit_vars <- lapply(self$lays, function(x)
+        x$get_unit_vars(show_dynamics = show_dynamics,
+                        show_constants = show_constants))
+      layer_vars <- lapply(self$lays, function(x)
+        x$get_layer_vars(show_dynamics = show_dynamics,
+                         show_constants = show_constants))
+      comb <- Map(function(x, y) cbind(x, y), unit_vars, layer_vars)
+      plyr::ldply(comb, data.frame)
+    },
 
+    get_network_vars = function(show_dynamics = T, show_constants = F){
+      df <- data.frame()
+      dynamic_vars <- data.frame(
+        lrate = self$lrate,
+        m1 = private$m1
+      )
+      constant_vars <-
+        data.frame(
+          n_lays = private$n_lays,
+          n_units_in_net = private$n_units_in_net,
+          avg_l_lrn_max = private$avg_l_lrn_max
+          avg_l_lrn_min = private$avg_l_lrn_min,
+          m_in_s = private$m_in_s,
+          m_lrn = private$m_lrn,
+          d_thr = private$d_thr,
+          d_rev = private$d_rev,
+          off = private$off,
+          gain = privategain
+        )
+      if (show_dynamics == T) df <- cbind(df, dynamic_vars)
+      if (show_constants == T) df <- cbind(df, constant_vars)
+      return(df)
     },
 
     create_inputs = function(which_layers, n_inputs, prop_active = 0.3){
@@ -289,13 +335,24 @@ network <-  R6::R6Class("network",
 
     learn_error_driven = function(inputs_minus, inputs_plus, lrate = 0.1,
                                   n_cycles_minus = 50, n_cycles_plus = 25){
-
       outs <- mapply(private$learn_one_pattern_error_driven,
                      inputs_minus,
                      inputs_plus,
                      pattern_number = seq(length(inputs_minus)),
                      MoreArgs = list(n_cycles_minus = n_cycles_minus,
                                      n_cycles_plus = n_cycles_plus,
+                                     lrate = lrate,
+                                     number_of_patterns = length(inputs_minus)),
+                     SIMPLIFY = F)
+      return(outs)
+    },
+
+    learn_self_organized = function(inputs_minus, lrate = 0.1,
+                                    n_cycles_minus = 50, n_cycles_plus = 25){
+      outs <- mapply(private$learn_one_pattern_self_organized,
+                     inputs_minus,
+                     pattern_number = seq(length(inputs_minus)),
+                     MoreArgs = list(n_cycles_minus = n_cycles_minus,
                                      lrate = lrate,
                                      number_of_patterns = length(inputs_minus)))
       return(outs)
@@ -307,6 +364,7 @@ network <-  R6::R6Class("network",
   ),
   # private --------------------------------------------------------------------
   private = list(
+    # functions for learning stimuli -------------------------------------------
     # trial
     #
     # runs several cycles with one input (for all layers)
@@ -378,7 +436,33 @@ network <-  R6::R6Class("network",
       return(output)
     },
 
-    # functions to create random inputs
+    # learn_one_pattern_self_organized
+    #
+    # same as above, bu for self organized learning (without plus phase)
+    learn_one_pattern_self_organized = function(input_minus, pattern_number,
+                                              number_of_patterns,
+                                              n_cycles_minus = 50,
+                                              lrate = 0.1,
+                                              reset = T){
+      # minus phase
+      private$run_trial(input_minus, n_cycles_minus, lrate = lrate,
+                        reset = reset)
+
+      output <- lapply(self$lays, function(x) x$get_unit_acts())
+
+      # change weights
+      self$chg_wt()
+
+      # show progress
+      if (pattern_number == number_of_patterns) {
+        cat(".\n")
+      } else {
+        cat(".")
+      }
+
+      return(output)
+    },
+    # functions to create random inputs-----------------------------------------
     create_one_input = function(dim_lays, which_layers, prop_active = 0.3){
       prob <- c(prop_active, 1 - prop_active)
       #n_units <- lapply(dim_lays, function(x) x[1] * x[2])
@@ -395,13 +479,13 @@ network <-  R6::R6Class("network",
 
     create_one_input_for_one_layer = function(n, has_layer_input, prob){
       result <- ifelse(has_layer_input,
-                       return(sample(c(.96, 0.01), n, replace = T,
+                       return(sample(c(.95, 0.05), n, replace = T,
                                      prob = prob)),
                        return(NULL))
       return(result)
     },
 
-    # functions to create random weights
+    # functions to create random weights ---------------------------------------
     create_rnd_wt_matrix = function(fun = runif){
       private$w_init <- matrix(mapply(private$create_wt_matrix_for_one_cxn,
                                       private$cxn,
@@ -629,15 +713,17 @@ network <-  R6::R6Class("network",
                                      rcv_lay_cxn[rcv_lay_cxn > 0])))
     },
 
-    cycle_with_one_unclamped_lay = function(lay, intern_inputs, ext_inputs,
-                                            lay_unclamped){
-      if (lay_unclamped) lay$cycle(intern_inputs, ext_inputs)
-    },
-
     cycle_with_unclamped_lays = function(intern_inputs, ext_inputs,
                                          lays_unclamped){
       Map(private$cycle_with_one_unclamped_lay, self$lays, intern_inputs,
           ext_inputs, lays_unclamped)
+      invisible(self)
+    },
+
+    cycle_with_one_unclamped_lay = function(lay, intern_inputs, ext_inputs,
+                                            lay_unclamped){
+      if (lay_unclamped) lay$cycle(intern_inputs, ext_inputs)
+      invisible(self)
     },
 
     # chg_wt subfuctions -------------------------------------------------------
