@@ -3,19 +3,24 @@ NULL
 
 #' leabra network class
 #'
-#' Class to simulate a biologically realistic network of units organized in
-#' layers
+#' Class to simulate a biologically realistic network of neurons
+#' (\code{\link{unit}s}) organized in \code{\link{layer}s}
 #'
 #' This class simulates a biologically realistic artifical neuronal network in
-#' the lebra framework. It consists of several \code{layer} objects in the
-#' variable (field) \code{lays} and some network-specific variables.
+#' the lebra framework (e.g. O'Reilly et al., 2016). It consists of several
+#' \code{\link{layer}} objects in the variable (field) \code{lays} and some
+#' network-specific variables.
+#'
+#' @references O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
+#' Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
+#' Edition. URL: http://ccnbook.colorado.edu
 #'
 #' @docType class
 #' @importFrom R6 R6Class
 #' @export
 #' @keywords data
 #' @return Object of \code{\link{R6Class}} with methods for calculating changes
-#'   of activity in a layer of neurons
+#'   of activity in a network of neurons organized in layers
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
@@ -47,23 +52,24 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{new(dim_lays, w_init; g_i_gain)}}{Creates an object of this
+#'   \item{\code{new(dim_lays, w_init, g_i_gain)}}{Creates an object of this
 #'   class with default parameters.
 #'
-#'   \code{dim_lays} list of number pairs for rows and columns of the layers
+#'     \code{dim_lays} list of number pairs for rows and columns of the layers,
+#'     e.g. \code{list(c(5, 5), c(10, 10), c(5, 5))} for a 25 x 100 x 25 network
 #'
-#'   \code{cxn} matrix specifying connection strength between layers, if layer j
-#'   sends projections to layer i, then cxn[i, j] = c > 0; 0 otherwise, c
-#'   specifies the relative strength of that connection with respect to the
-#'   other projections to layer i
+#'     \code{cxn} matrix specifying connection strength between layers, if layer
+#'     j sends projections to layer i, then cxn[i, j] = strength > 0 and 0
+#'     otherwise, strength specifies the relative strength of that connection
+#'     with respect to the other projections to layer i
 #'
-#'   \code{w_init} matrix of initial weight matrices (like a cell array in
-#'   matlab), this is analogous to cxn, i.e. w_init[i, j] contains the initial
-#'   weight matrix for the cxn from layer j to i
+#'     \code{w_init} matrix of initial weight matrices (like a cell array in
+#'     matlab), this is analogous to \code{cxn}, i.e. \code{w_init[i, j]}
+#'     contains the initial weight matrix for the connection from layer j to i
 #'
-#'   \code{g_i_gain} vector of inhibitory conductance gain values for every
-#'   layer, this comes in handy to control overall level of inhibition of
-#'   specific lays}
+#'     \code{g_i_gain} vector of inhibitory conductance gain values for every
+#'     layer, this comes in handy to control overall level of inhibition of
+#'     specific layers}
 #'
 #'   \item{\code{cycle(ext_inputs, clamp_inp)}}{cycle iterates one time step
 #'   with network object
@@ -77,10 +83,10 @@ NULL
 #'     1: layers are clamped to their input value
 #'     0: external inputs are summed to ecitatory conductance values}
 #'
-#'   \item{\code{chg_wt()}}{Changes the weights of the entire network with the
+#'   \item{\code{chg_wt()}}{changes the weights of the entire network with the
 #'   XCAL learning equation}
 #'
-#'   \item{\code{reset(random = F)}}{ sets the activation of all units in all
+#'   \item{\code{reset(random = F)}}{sets the activation of all units in all
 #'   layers to 0, and sets all activation time averages to that value, used to
 #'   begin trials from a random stationary point, the activity values may also
 #'   be set to a random value
@@ -88,45 +94,48 @@ NULL
 #'     \code{random} logical variable, if TRUE set activation randomly between
 #'     .05 and .95, if FALSE set activation to 0}
 #'
-#'   \item{\code{set_weights(w)}}{Sets new weights
+#'   \item{\code{set_weights(w)}}{sets new weights for entire network, useful to
+#'     load networks that have already learned
 #'
 #'     \code{w} matrix of matrices (like a cell array in matlab) with new weight
 #'     values}
 #'
-#'   \item{\code{get_weights()}}{Returns the complete weight matrix,
-#'   \code{w[rcv, snd]} contains the weight matrix for the projections from
-#'   layer \code{snd} to layer \code{rcv}. Note that this is a matrix of
-#'   matrices (equivalent to a matlab cell array.)}
+#'   \item{\code{get_weights()}}{returns the complete weight matrix, \code{w[i,
+#'   j]} contains the weight matrix for the projections from layer j to layer i.
+#'   Note that this is a matrix of matrices (equivalent to a matlab cell array)}
 #'
 #'   \item{\code{get_layer_and_unit_vars(show_dynamics = T, show_constants =
-#'   F)}}{Returns a data frame with with the current state of all layer and unit
-#'   variables Every row is a unit. You can choose whether you want dynamic
+#'   F)}}{returns a data frame with with the current state of all layer and unit
+#'   variables. Every row is a unit. You can choose whether you want dynamic
 #'   values and / or constant values. This might be useful if you want to
 #'   analyse what happens in the network overall, which would otherwise not be
 #'   possible, because most of the variables (fields) are private in the layer
 #'   and unit class.}
 #'
-#'   \item{\code{get_network_vars(show_dynamics = T, show_constants = F)}}{Returns
+#'   \item{\code{get_network_vars(show_dynamics = T, show_constants = F)}}{returns
 #'   a data frame with 1 row with the current state of the variables in the
-#'   network  You can choose whether you want dynamic values and / or constant
+#'   network. You can choose whether you want dynamic values and / or constant
 #'   values. This might be useful if you want to analyse what happens in a
-#'   layer, which would otherwise not be possible, because some of the variables
-#'   (fields) are private in the network class.}
+#'   network, which would otherwise not be possible, because some of the variables
+#'   (fields) are private in the network class. There are some additional
+#'   variables in the network class that cannot be extracted this way because
+#'   they are matrices. If it is necessary to extract them, look at the source
+#'   code.}
 #'
-#'   \item{\code{create_inputs(which_layers, n_inputs, prop_active = 0.3)}}{Returns
-#'   a list of length \code{n_inputs} with random input patterns (either 0.05,
-#'   or. 0.95) for the layers specified in \code{which_layer}. All other layers
-#'   will have an input of NULL
+#'   \item{\code{create_inputs(which_layers, n_inputs, prop_active =
+#'   0.3)}}{returns a list of length \code{n_inputs} with random input patterns
+#'   (either 0.05, or. 0.95) for the layers specified in \code{which_layer}. All
+#'   other layers will have an input of NULL
 #'
 #'     \code{which_layers} vector of layer numbers, for which you want to create
 #'     random inputs
-#'     
+#'
 #'     \code{n_inputs} single numeric value, how many inputs should be created
-#'     
+#'
 #'     \code{prop_active} average proportion of active units in the input
 #'     patterns, default is 0.3}
 #'
-#'  }
+#'  
 #' }
 network <-  R6::R6Class("network",
   public = list(
@@ -314,7 +323,7 @@ network <-  R6::R6Class("network",
         data.frame(
           n_lays = private$n_lays,
           n_units_in_net = private$n_units_in_net,
-          avg_l_lrn_max = private$avg_l_lrn_max
+          avg_l_lrn_max = private$avg_l_lrn_max,
           avg_l_lrn_min = private$avg_l_lrn_min,
           m_in_s = private$m_in_s,
           m_lrn = private$m_lrn,
