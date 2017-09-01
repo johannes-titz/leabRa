@@ -1,19 +1,19 @@
 #' @include unit.R
 NULL
 
-#' Class to simulate a biologically realistic layer of neurons
+#' Class to simulate a biologically realistic layer of neurons (units)
 #'
 #' This class simulates a biologically realistic layer of neurons in the lebra
-#' framework. It consists of several \code{unit} objects in the variable (field)
-#' \code{units} and some layer-specific variables.
+#' framework. It consists of several \link{\code{unit}} objects in the variable
+#' (field) \code{units} and some layer-specific variables.
 #'
 #' @docType class
 #' @importFrom R6 R6Class
 #' @export
 #' @keywords data
 #' @return Object of \code{\link{R6Class}} with methods for calculating changes
-#'   of activity in a layer of neurons
-#' @format \code{\link{R6Class}} object.
+#'   of activation in a layer of neurons.
+#' @format \code{\link{R6Class}} object
 #'
 #' @examples
 #' l <- layer$new(c(5, 5)) # create a 5 x 5 layer with default leabra values
@@ -27,23 +27,24 @@ NULL
 #' # let us clamp the activation of the 25 units to some random values between
 #' # 0.05 and 0.95
 #' l <- layer$new(c(5, 5))
-#' acts <- 0.05 + runif(25, 0, .9)
+#' activations <- 0.05 + runif(25, 0, .9)
 #' l$avg_act
-#' l$clamp_cycle(acts)
+#' l$clamp_cycle(activations)
 #' l$avg_act
-#' # what happened to the unit acts?
+#' # what happened to the unit activations?
 #' l$get_unit_acts()
-#' # compare with acts
-#' acts
-#' # scaled acts are scaled by the average activity of the layer and should be
+#' # compare with activations
+#' activations
+#' # scaled activations are scaled by the average activation of the layer and should be
 #' # smaller
 #' l$get_scaled_acts()
 #'
 # TODO-----------------------------------------
 #' # let us run 10 cycles with unclamped activation and output the activation
 #' # produced because of changes in conductance
-#' l <- unit$new()
+#' l <- layer$new(c(5, 5))
 #' cycle_number <- 1:10
+#' intern_input <- 0.05 + runif(25, 0, .9)
 #' result <- lapply(cycle_number, function(x)
 #'                  l$cycle(intern_input = )$get_vars())
 #' # make a data frame out of the list
@@ -53,65 +54,73 @@ NULL
 #' # add conductance g_e to plot, should approach g_e_raw
 #' lines(result$g_e, type = "b", col = "blue")
 #'
-#' @field units a list with all the \link{unit} objects of the layer
-#' @field wt a receiving x sending weight matrix, where the receiving unit (row)
-#'   has the current weight values for all sending units (columns)
-#' @field ce_wt sigmoidal contrast-enhanced version of the weight matrix wt
+#' @field units a list with all the \link{\code{unit}} objects of the layer
+#' @field weights a receiving \times sending weight matrix, where the receiving units
+#'   (row) has the current weight values for the sending units (column)
+#' @field ce_weights sigmoidal contrast-enhanced version of the weight matrix
+#'   \code{weights}
 #' @field n number of units in layer
+#' @field layer_number layer number in network (this is 1 if you create
+#' a layer on your own, without the network class)
+#' @field avg_act the average activiation of all units in the layer
+#' (this is an active binding)
 #'
 #' @section Methods:
 #' \describe{
 #'   \item{\code{new(dim, g_i_gain = 2)}}{Creates an object of this class with
 #'   default parameters.
 #'
-#'     \code{dim} A a pair of numbers giving the rows and columns of the layer.
+#'     \code{dim} A pair of numbers giving the rows and columns of the layer.
 #'
-#'     \code{g_i_gain} Gain factor for inhibitory conductance. If you want less
+#'     \code{g_i_gain} Gain factor for inhibitory conductance, if you want less
 #'     activation in a layer, set this higher.}
 #'
-#'   \item{\code{get_unit_acts()}}{Returns a vector with the activities of all
+#'   \item{\code{get_unit_acts()}}{Returns a vector with the activations of all
 #'   units of a layer.}
 #'
-#'   \item{\code{get_unit_scaled_acts()}}{get_unit_scaled_acts returns a vector
-#'   with the scaled activities of all units of a layer. Scaling is done with
-#'   recip_avg_act_n, a reciprocal function of the number of active units.}
+#'   \item{\code{get_unit_scaled_acts()}}{get_unit_scaled_acts Returns a vector
+#'   with the scaled activations of all units of a layer. Scaling is done with
+#'   \code{recip_avg_act_n}, a reciprocal function of the number of active
+#'   units.}
 #'
 #'   \item{\code{cycle(intern_input, ext_input)}}{Iterates one time step with
 #'   layer object.
 #'
-#'    \code{intern_input} Vector with inputs from all other layers. Each input
+#'     \code{intern_input} Vector with inputs from all other layers. Each input
 #'   has already been scaled by a reciprocal function of the number of active
-#'   units (recip_avg_act_n) of the sending layer and by the connection strength
-#'   between the receiving and sending layer. The weight matrix is multiplied
-#'   with this input vector to get the excitatory conductance for each unit in
-#'   the layer.
+#'   units (\code{recip_avg_act_n}) of the sending layer and by the connection
+#'   strength between the receiving and sending layer. The weight matrix
+#'   \code{ce_weights} is multiplied with this input vector to get the excitatory
+#'   conductance for each unit in the layer.
 #'
 #'     \code{ext_input} Vector with inputs not coming from another layer, with
-#'   length equalling the number of units in this layer. If empty, no external
-#'   inputs are processed. If the external inputs are not clamped, this is
-#'   actually an excitatory conductance value, which is added to the conductance
-#'   produced by the internal input and weight matrix.
+#'   length equalling the number of units in this layer. If empty (\code{NULL}),
+#'   no external inputs are processed. If the external inputs are not clamped,
+#'   this is actually an excitatory conductance value, which is added to the
+#'   conductance produced by the internal input and weight matrix.
 #'   }
 #'
-#'   \item{\code{clamp_cycle(acts)}}{Iterates one time step with layer
-#'   object with clamped acts, meaning that acts are
-#'   instantenously set without time integration)
+#'   \item{\code{clamp_cycle(activations)}}{Iterates one time step with layer
+#'   object with clamped activations, meaning that activations are
+#'   instantenously set without time integration.)
 #'
-#'     \code{acts} acts you want to clamp to the units in the layer}
+#'     \code{activations} Activations you want to clamp to the units in the
+#'     layer.}
 #'
 #'   \item{\code{get_unit_act_avgs()}}{Returns a list with the short, medium and
 #' long term activation averages of all units in the layer as vectors. The super
 #' short term average is not returned, and the long term average is not updated
-#' before being returned. These averages are used by the network class to
+#' before being returned (this is done in the function \code{chg_wt()} with
+#' \code{updt_unit_avg_l}). These averages are used by the network class to
 #' calculate weight changes.}
 #'
 #'   \item{\code{updt_unit_avg_l()}}{Updates the long-term average (avg_l) of all
 #' units in the layer, usually done after a plus phase.}
 #'
-#'   \item{\code{updt_recip_avg_act_n()}}{Updates the avg_act_inert and
-#' recip_avg_act_n variables, these variables update at the end of plus phases
-#' instead of cycle by cycle. This version assumes full connectivity when
-#' updating recip_avg_act_n.}
+#'   \item{\code{updt_recip_avg_act_n()}}{Updates the \code{avg_act_inert} and
+#' \code{recip_avg_act_n} variables, these variables update before the weights
+#' are changed instead of cycle by cycle. This version of the function assumes
+#' full connectivity between layers.}
 #'
 #'   \item{\code{reset(random = F)}}{Sets the activation and activation averages
 #' of all units to 0. Used to begin trials from a stationary point.
@@ -119,14 +128,14 @@ NULL
 #'     \code{random} Logical variable, if TRUE the activation ist set randomly
 #' between .05 and .95 for every unit instead of 0.}
 #'
-#'   \item{\code{set_ce_weights()}}{Sets contrast enhanced weight values}
+#'   \item{\code{set_ce_weights()}}{Sets contrast enhanced weight values.}
 #'
 #'   \item{\code{get_unit_vars(show_dynamics = T, show_constants = F)}}{Returns
 #'   a data frame with with the current state of all unit variables in the
 #'   layer. Every row is a unit. You can choose whether you want dynamic values
 #'   and / or constant values. This might be useful if you want to analyse what
 #'   happens in units of a layer, which would otherwise not be possible, because
-#'   most of the variables (fields) are private in unit class.}
+#'   most of the variables (fields) are private in the unit class.}
 #'
 #'   \item{\code{get_layer_vars(show_dynamics = T, show_constants = F)}}{Returns a
 #' data frame with 1 row with the current state of the variables in the layer.
@@ -172,7 +181,7 @@ layer <- R6::R6Class("layer",
     cycle = function(intern_input, ext_input = NULL){
       # obtaining the excitatory conductance because of input
       # contrast enhanced weights are used
-      g_e_per_unit <- self$ce_wt %*% intern_input
+      g_e_per_unit <- self$ce_weights %*% intern_input
       if (!isempty(ext_input)) g_e_per_unit <- g_e_per_unit + ext_input
 
       # obtaining inhibitory conductance
@@ -188,8 +197,8 @@ layer <- R6::R6Class("layer",
       invisible(self)
     },
 
-    clamp_cycle = function(acts){
-      Map(function(x, y) x$clamp_cycle(y), self$units, acts)
+    clamp_cycle = function(activations){
+      Map(function(x, y) x$clamp_cycle(y), self$units, activations)
       # updating inhibition for the next cycle
       private$g_fbi <- private$g_fbi_gain * self$avg_act
       invisible(self)
@@ -237,7 +246,7 @@ layer <- R6::R6Class("layer",
     },
 
     set_ce_weights = function(off, gain){
-      self$ce_wt <- 1 / (1 + (off * (1 - self$wt) / self$wt) ^ gain)
+      self$ce_weights <- 1 / (1 + (off * (1 - self$weights) / self$weights) ^ gain)
       invisible(self)
     },
 
@@ -275,9 +284,9 @@ layer <- R6::R6Class("layer",
     # fields -------------------------------------------------------------------
     n = NULL,          # number of units
     # An n x i weights matrix, where the n-th row has the
-    # current wt values for all inputs coming to the n-th unit
-    wt = NULL,
-    ce_wt = NULL,      # contrast-enhanced version of wt. ce_wt = SIG(wt).
+    # current weights values for all inputs coming to the n-th unit
+    weights = NULL,
+    ce_weights = NULL,      # contrast-enhanced version of weights. ce_weights = SIG(weights).
     units = NULL,      # a list with all the unit objects of the layer
     layer_number = 1   # number of layer in the network
   ),
@@ -316,7 +325,7 @@ layer <- R6::R6Class("layer",
   active = list(
     # dependent
     #
-    # avg_act returns the average activity of all units
+    # avg_act returns the average activation of all units
     #
     avg_act = function(){
       mean(self$get_unit_acts())

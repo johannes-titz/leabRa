@@ -8,26 +8,30 @@ NULL
 #'
 #' This class simulates a biologically realistic artifical neuronal network in
 #' the lebra framework (e.g. O'Reilly et al., 2016). It consists of several
-#' \code{\link{layer}} objects in the variable (field) \code{lays} and some
+#' \code{\link{layer}} objects in the variable (field) \code{layers} and some
 #' network-specific variables.
 #'
 #' @references O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
 #' Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
 #' Edition. URL: http://ccnbook.colorado.edu
 #'
+#' @references Have also a look at
+#'   https://grey.colorado.edu/emergent/index.php/Leabra (especially the link to
+#'   the matlab code) and https://en.wikipedia.org/wiki/Leabra
+#'
 #' @docType class
 #' @importFrom R6 R6Class
 #' @export
 #' @keywords data
 #' @return Object of \code{\link{R6Class}} with methods for calculating changes
-#'   of activity in a network of neurons organized in layers
+#'   of activation in a network of neurons organized in \code{\link{layer}}s
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
 #' # create a network with 3 layers
 #' net <- network$new(list(c(5, 5), c(5, 10), c(5, 5))
 #'
-#' l$g_e_avg # private values cannot be accessed
+#' net$g_e_avg # private values cannot be accessed
 #' # if you want to see alle variables, you need to use the function
 #' l$get_layer_vars(show_dynamics = T, show_constants = T)
 #' # if you want to see a summary of all units without constant values
@@ -43,99 +47,141 @@ NULL
 #' l$get_unit_acts()
 #' # compare with acts
 #' acts
-#' # scaled acts are scaled by the average activity of the layer and should be
+#' # scaled acts are scaled by the average activation of the layer and should be
 #' # smaller
 #' l$get_scaled_acts()
 #'
-#' @field lays a list of layer objects
-#' @field lrate learning rate
+#' @field layers a list of \code{\link{layer}} objects
+#' @field lrate learning rate, gain factor for how much the connection weights
+#'   should change when the method \code{chg_wt()} is called
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{new(dim_lays, w_init, g_i_gain)}}{Creates an object of this
+#'   \item{\code{new(dim_lays, cxn, g_i_gain, w_init_fun = function(x)
+#'   0.3 + 0.4 * runif(x), w_init = NULL)}}{Creates an object of this
 #'   class with default parameters.
 #'
-#'     \code{dim_lays} list of number pairs for rows and columns of the layers,
-#'     e.g. \code{list(c(5, 5), c(10, 10), c(5, 5))} for a 25 x 100 x 25 network
+#'     \code{dim_lays} List of number pairs for rows and columns of the layers,
+#'     e.g. \code{list(c(5, 5), c(10, 10), c(5, 5))} for a 25 x 100 x 25
+#'     network.
 #'
-#'     \code{cxn} matrix specifying connection strength between layers, if layer
-#'     j sends projections to layer i, then cxn[i, j] = strength > 0 and 0
-#'     otherwise, strength specifies the relative strength of that connection
-#'     with respect to the other projections to layer i
+#'     \code{cxn} Matrix specifying connection strength between layers, if layer
+#'     j sends projections to layer i, then \code{cxn[i, j] = strength > 0} and 0
+#'     otherwise. Strength specifies the relative strength of that connection
+#'     with respect to the other projections to layer i.
 #'
-#'     \code{w_init} matrix of initial weight matrices (like a cell array in
+#'     \code{g_i_gain = rep(2, length(dim_lays))} Vector of inhibitory
+#'     conductance gain values for every layer. This comes in handy to control
+#'     overall level of inhibition of specific layers. Default is 2 for every
+#'     layer.
+#'
+#'     \code{w_init_fun} Function that specifies how random weights
+#'     should be created, default value is to generate weights between
+#'     0.3 and 0.7 from a uniform distribution. It is close to 0.5 because the
+#'     weights are contrast enhanced internally, so will actually be in a wider
+#'     range.
+#'
+#'     \code{w_init} Matrix of initial weight matrices (like a cell array in
 #'     matlab), this is analogous to \code{cxn}, i.e. \code{w_init[i, j]}
-#'     contains the initial weight matrix for the connection from layer j to i
+#'     contains the initial weight matrix for the connection from layer j to i.
+#'     If you specify a \code{w_init}, \code{w_init_fun} is ignored. You can use
+#'     this if you want to have full control over the weight matrix.}
 #'
-#'     \code{g_i_gain} vector of inhibitory conductance gain values for every
-#'     layer, this comes in handy to control overall level of inhibition of
-#'     specific layers}
+#'   \item{\code{cycle(ext_inputs, clamp_inp)}}{Iterates one time step
+#'   with the network object with external inputs.
 #'
-#'   \item{\code{cycle(ext_inputs, clamp_inp)}}{cycle iterates one time step
-#'   with network object
-#'
-#'     \code{ext_inputs} a list of matrices; ext_inputs[[i]] is a matrix that
+#'     \code{ext_inputs} A list of matrices; ext_inputs[[i]] is a matrix that
 #'     for layer i specifies the external input to each of its units. An empty
-#'     matrix denotes no input to that layer. You can also use a vector instead
-#'     of a matrix, because the matrix is vectorised anyway.
+#'     matrix (\code{NULL}) denotes no input to that layer. You can also use a
+#'     vector instead of a matrix, because the matrix is vectorised anyway.
 #'
-#'     \code{clamp_inp} a binary flag;
-#'     1: layers are clamped to their input value
-#'     0: external inputs are summed to ecitatory conductance values}
+#'     \code{clamp_inp} Logical variable; TRUE: external inputs are clamped to
+#'     the activities of the units in the layers, FALSE: external inputs are
+#'     summed to excitatory conductance values (note: not to the activation) of
+#'     the units in the layers.}
 #'
-#'   \item{\code{chg_wt()}}{changes the weights of the entire network with the
-#'   XCAL learning equation}
+#'   \item{\code{chg_wt()}}{Changes the weights of the entire network with the
+#'   XCAL learning equation.}
 #'
-#'   \item{\code{reset(random = F)}}{sets the activation of all units in all
-#'   layers to 0, and sets all activation time averages to that value, used to
-#'   begin trials from a random stationary point, the activity values may also
-#'   be set to a random value
+#'   \item{\code{reset(random = F)}}{Sets the activation of all units in all
+#'   layers to 0, and sets all activation time averages to that value. Used to
+#'   begin trials from a random stationary point. The activation values may also
+#'   be set to a random value.
 #'
-#'     \code{random} logical variable, if TRUE set activation randomly between
-#'     .05 and .95, if FALSE set activation to 0}
+#'     \code{random} Logical variable, if TRUE set activation randomly between
+#'     .05 and .95, if FALSE set activation to 0, which is the default.}
 #'
-#'   \item{\code{set_weights(w)}}{sets new weights for entire network, useful to
-#'     load networks that have already learned
+#'   \item{\code{create_inputs(which_layers, n_inputs, prop_active =
+#'   0.3)}}{Returns a list of length \code{n_inputs} with random input patterns
+#'   (either 0.05, or. 0.95) for the layers specified in \code{which_layers}.
+#'   All other layers will have an input of NULL.
 #'
-#'     \code{w} matrix of matrices (like a cell array in matlab) with new weight
-#'     values}
+#'     \code{which_layers} Vector of layer numbers, for which you want to create
+#'     random inputs.
 #'
-#'   \item{\code{get_weights()}}{returns the complete weight matrix, \code{w[i,
+#'     \code{n_inputs} Single numeric value, how many inputs should be created.
+#'
+#'     \code{prop_active} Average proportion of active units in the input
+#'     patterns, default is 0.3.}
+#'
+#'   \item{\code{learn_error_driven(inputs_minus, inputs_plus, lrate =
+#'   0.1, n_cycles_minus = 50, n_cycles_plus = 25)}}{Learns to associate
+#'   specific inputs with specific outputs in an error-driven fashion.
+#'
+#'     \code{inputs_minus} Inputs for the minus phase (the to be learned output
+#'     ist not presented).
+#'
+#'     \code{inputs_plus} Inputs for the plus phase (the to be learned output is
+#'     presented).
+#'
+#'     \code{lrate} Learning rate, default is 0.1.
+#'
+#'     \code{n_cycles_minus} How many cycles to run in the minus phase,
+#'     default is 50.
+#'
+#'     \code{n_cycles_plus} How many cycles to run in the plus phase,
+#'     default is 25.}
+#'
+#'    \item{\code{learn_self_organized(inputs, lrate,
+#'  n_cycles)}}{Learns to categorize inputs in a self-organized fashion.
+#'
+#'     \code{inputs_minus} Inputs for the minus phase (no correct output
+#'     ist presented).
+#'
+#'     \code{lrate} Learning rate, default is 0.1.
+#'
+#'     \code{n_cycles} How many cycles to run, default is 50.
+#'     }
+#'
+#'   \item{\code{set_weights(weights)}}{Sets new weights for entire network,
+#'   useful to load networks that have already learned and thus very specific
+#'   weights.
+#'
+#'     \code{weights} Matrix of matrices (like a cell array in matlab) with new
+#'   weight values.}
+#'
+#'   \item{\code{get_weights()}}{Returns the complete weight matrix, \code{w[i,
 #'   j]} contains the weight matrix for the projections from layer j to layer i.
-#'   Note that this is a matrix of matrices (equivalent to a matlab cell array)}
+#'   Note that this is a matrix of matrices (equivalent to a matlab cell array).}
 #'
 #'   \item{\code{get_layer_and_unit_vars(show_dynamics = T, show_constants =
-#'   F)}}{returns a data frame with with the current state of all layer and unit
+#'   F)}}{Returns a data frame with the current state of all layer and unit
 #'   variables. Every row is a unit. You can choose whether you want dynamic
 #'   values and / or constant values. This might be useful if you want to
 #'   analyse what happens in the network overall, which would otherwise not be
 #'   possible, because most of the variables (fields) are private in the layer
 #'   and unit class.}
 #'
-#'   \item{\code{get_network_vars(show_dynamics = T, show_constants = F)}}{returns
-#'   a data frame with 1 row with the current state of the variables in the
-#'   network. You can choose whether you want dynamic values and / or constant
-#'   values. This might be useful if you want to analyse what happens in a
-#'   network, which would otherwise not be possible, because some of the variables
-#'   (fields) are private in the network class. There are some additional
-#'   variables in the network class that cannot be extracted this way because
-#'   they are matrices. If it is necessary to extract them, look at the source
-#'   code.}
+#'   \item{\code{get_network_vars(show_dynamics = T, show_constants =
+#'   F)}}{Returns a data frame with 1 row with the current state of the
+#'   variables in the network. You can choose whether you want dynamic values
+#'   and / or constant values. This might be useful if you want to analyse what
+#'   happens in a network, which would otherwise not be possible, because some
+#'   of the variables (fields) are private in the network class. There are some
+#'   additional variables in the network class that cannot be extracted this way
+#'   because they are matrices; if it is necessary to extract them, look at the
+#'   source code.}
 #'
-#'   \item{\code{create_inputs(which_layers, n_inputs, prop_active =
-#'   0.3)}}{returns a list of length \code{n_inputs} with random input patterns
-#'   (either 0.05, or. 0.95) for the layers specified in \code{which_layer}. All
-#'   other layers will have an input of NULL
-#'
-#'     \code{which_layers} vector of layer numbers, for which you want to create
-#'     random inputs
-#'
-#'     \code{n_inputs} single numeric value, how many inputs should be created
-#'
-#'     \code{prop_active} average proportion of active units in the input
-#'     patterns, default is 0.3}
-#'
-#'  
 #' }
 network <-  R6::R6Class("network",
   public = list(
@@ -192,10 +238,10 @@ network <-  R6::R6Class("network",
 
     chg_wt = function(){
       private$updt_recip_avg_act_n()
-      lapply(self$lays, function(x) x$updt_unit_avg_l())
+      lapply(self$layers, function(x) x$updt_unit_avg_l())
 
       # Extracting the averages for all layers
-      avgs <- lapply(self$lays,
+      avgs <- lapply(self$layers,
                      function(x) x$get_unit_act_avgs(private$m_in_s,
                                                      private$avg_l_lrn_min,
                                                      private$avg_l_lrn_max))
@@ -229,7 +275,7 @@ network <-  R6::R6Class("network",
                                                               ncol = y),
                                 avg_l_lrn_rcv,
                                 private$n_units_in_rcv_lays)
-      # wt changes
+      # weights changes
       dwt_m <- private$m_mapply(function(x, y) private$get_dwt(x, y),
                                 s_hebb,
                                 m_hebb)
@@ -254,27 +300,27 @@ network <-  R6::R6Class("network",
       dwt_list <- apply(dwt_null, 1, function(x) Reduce(cbind, x))
 
       private$set_new_exp_bounded_wts(dwt_list)
-      lapply(self$lays, function(x) x$set_ce_weights(private$off, private$gain))
+      lapply(self$layers, function(x) x$set_ce_weights(private$off, private$gain))
       invisible(self)
     },
 
     reset = function(random = F){
-      lapply(self$lays, function(x) x$reset(random))
+      lapply(self$layers, function(x) x$reset(random))
       invisible(self)
     },
 
-    set_weights = function(w){
-      # This function receives a cell array w, which is like the cell array
-      # w_init in the constructor: w{i,j} is the weight matrix with the initial
+    set_weights = function(weights){
+      # This function receives a cell array weights, which is like the cell array
+      # w_init in the constructor: weights{i,j} is the weight matrix with the initial
       # weights for the cxn from layer j to layer i. The weights are set to the
-      # values of w. This whole function is a slightly modified copypasta of the
+      # values of weights. This whole function is a slightly modified copypasta of the
       # constructor.
 
-      private$w_init <- w
+      private$w_init <- weights
 
-      w_empty <- matrix(sapply(w, isempty), nrow = nrow(w))
+      w_empty <- matrix(sapply(weights, isempty), nrow = nrow(weights))
 
-      private$is_dim_w_init_equal_to_dim_cxn(w)
+      private$is_dim_w_init_equal_to_dim_cxn(weights)
       private$connected_lays_have_weight_matrix()
       private$non_connected_lays_do_not_have_weight_matrix()
 
@@ -287,26 +333,26 @@ network <-  R6::R6Class("network",
       # make one weight matrix for every layer by collapsing receiving layer
       # weights columnwise, only do this for layers that receive something at
       # all (isempty)
-      wts <- apply(w, 1, function(x) Reduce("cbind", x))
-      self$lays <- Map(function(x, y) {if (!isempty(y)) x$wt <- y; x},
-                       self$lays, wts)
+      wts <- apply(weights, 1, function(x) Reduce("cbind", x))
+      self$layers <- Map(function(x, y) {if (!isempty(y)) x$weights <- y; x},
+                       self$layers, wts)
 
       # set the contrast-enhanced version of the weights
-      lapply(self$lays, function(x) x$set_ce_weights(private$off, private$gain))
+      lapply(self$layers, function(x) x$set_ce_weights(private$off, private$gain))
       invisible(self)
     },
 
     get_weights = function(){
       w <- matrix(Map(private$get_weight_for_one_connection, private$cxn,
-                      private$w_index_low, private$w_index_up, self$lays),
+                      private$w_index_low, private$w_index_up, self$layers),
                   ncol = ncol(private$w_index_low))
     },
 
     get_layer_and_unit_vars = function(show_dynamics = T, show_constants = F){
-      unit_vars <- lapply(self$lays, function(x)
+      unit_vars <- lapply(self$layers, function(x)
         x$get_unit_vars(show_dynamics = show_dynamics,
                         show_constants = show_constants))
-      layer_vars <- lapply(self$lays, function(x)
+      layer_vars <- lapply(self$layers, function(x)
         x$get_layer_vars(show_dynamics = show_dynamics,
                          show_constants = show_constants))
       comb <- Map(function(x, y) cbind(x, y), unit_vars, layer_vars)
@@ -314,10 +360,10 @@ network <-  R6::R6Class("network",
     },
 
     get_network_vars = function(show_dynamics = T, show_constants = F){
-      df <- data.frame()
+      df <- data.frame(network_number = 1)
       dynamic_vars <- data.frame(
         lrate = self$lrate,
-        m1 = private$m1
+        m1 = private$get_m1()
       )
       constant_vars <-
         data.frame(
@@ -330,7 +376,7 @@ network <-  R6::R6Class("network",
           d_thr = private$d_thr,
           d_rev = private$d_rev,
           off = private$off,
-          gain = privategain
+          gain = private$gain
         )
       if (show_dynamics == T) df <- cbind(df, dynamic_vars)
       if (show_constants == T) df <- cbind(df, constant_vars)
@@ -356,20 +402,21 @@ network <-  R6::R6Class("network",
       return(outs)
     },
 
-    learn_self_organized = function(inputs_minus, lrate = 0.1,
-                                    n_cycles_minus = 50, n_cycles_plus = 25){
+    learn_self_organized = function(inputs, lrate = 0.1,
+                                    n_cycles = 50){
       outs <- mapply(private$learn_one_pattern_self_organized,
-                     inputs_minus,
-                     pattern_number = seq(length(inputs_minus)),
-                     MoreArgs = list(n_cycles_minus = n_cycles_minus,
+                     inputs,
+                     pattern_number = seq(length(inputs)),
+                     MoreArgs = list(n_cycles_minus = n_cycles,
                                      lrate = lrate,
-                                     number_of_patterns = length(inputs_minus)))
+                                     number_of_patterns = length(inputs)),
+                     SIMPLIFY = F)
       return(outs)
     },
 
     # fields -------------------------------------------------------------------
     lrate = 0.1,  # learning rate for XCAL
-    lays = list()
+    layers = list()
   ),
   # private --------------------------------------------------------------------
   private = list(
@@ -428,7 +475,7 @@ network <-  R6::R6Class("network",
       private$run_trial(input_minus, n_cycles_minus, lrate = lrate,
                         reset = reset)
 
-      output <- lapply(self$lays, function(x) x$get_unit_acts())
+      output <- lapply(self$layers, function(x) x$get_unit_acts())
 
       # plus phase, do not reset the network!
       private$run_trial(input_plus, n_cycles_plus, lrate = lrate, reset = F)
@@ -457,7 +504,7 @@ network <-  R6::R6Class("network",
       private$run_trial(input_minus, n_cycles_minus, lrate = lrate,
                         reset = reset)
 
-      output <- lapply(self$lays, function(x) x$get_unit_acts())
+      output <- lapply(self$layers, function(x) x$get_unit_acts())
 
       # change weights
       self$chg_wt()
@@ -581,15 +628,15 @@ network <-  R6::R6Class("network",
     },
 
     create_lays = function(){
-      self$lays <- mapply(function(x, y) layer$new(x, y), private$dim_lays,
+      self$layers <- mapply(function(x, y) layer$new(x, y), private$dim_lays,
                           private$g_i_gain)
-      Map(function(x, y) x$layer_number <- y, self$lays, 1:length(self$lays))
+      Map(function(x, y) x$layer_number <- y, self$layers, 1:length(self$layers))
     },
 
     # there are a couple of variables that count how many units are in the
     # network, in the layers and for every cxn
     set_all_unit_numbers = function(){
-      private$n_units_in_lays <- sapply(self$lays, function(x) x$n)
+      private$n_units_in_lays <- sapply(self$layers, function(x) x$n)
       private$n_units_in_net <- Reduce("+", private$n_units_in_lays)
       private$set_n_units_in_rcv_lays()
       private$set_n_units_in_send_lays()
@@ -624,8 +671,8 @@ network <-  R6::R6Class("network",
 
     create_wt_for_lays = function(){
       wts <- apply(private$w_init, 1, function(x) Reduce("cbind", x))
-      Map(function(x, y) if(!isempty(y)) x$wt <- y, self$lays, wts)
-      lapply(self$lays, function(x) x$set_ce_weights(private$off, private$gain))
+      Map(function(x, y) if(!isempty(y)) x$weights <- y, self$layers, wts)
+      lapply(self$layers, function(x) x$set_ce_weights(private$off, private$gain))
     },
 
     # second argument test in constructor---------------------------------------
@@ -706,12 +753,12 @@ network <-  R6::R6Class("network",
     },
 
     clamp_ext_inputs = function(){
-      Map(function(x, y) if (!is.null(y)) x$clamp_cycle(y), self$lays,
+      Map(function(x, y) if (!is.null(y)) x$clamp_cycle(y), self$layers,
           private$ext_inputs)
     },
 
     find_intern_inputs = function(){
-      activeness_scaled_acts <- lapply(self$lays,
+      activeness_scaled_acts <- lapply(self$layers,
                                        function(x) x$get_unit_scaled_acts())
       rcv_lays_cxn <- unlist(apply(private$cxn, 1, list), recursive = F)
       lapply(rcv_lays_cxn, private$cxn_scale_acts, activeness_scaled_acts)
@@ -724,7 +771,7 @@ network <-  R6::R6Class("network",
 
     cycle_with_unclamped_lays = function(intern_inputs, ext_inputs,
                                          lays_unclamped){
-      Map(private$cycle_with_one_unclamped_lay, self$lays, intern_inputs,
+      Map(private$cycle_with_one_unclamped_lay, self$layers, intern_inputs,
           ext_inputs, lays_unclamped)
       invisible(self)
     },
@@ -741,12 +788,12 @@ network <-  R6::R6Class("network",
     #
     # get weight cahnges with the "check mark" function in XCAL
     #
-    # x vector of abscissa values, this is the hebbian short term activity of
+    # x vector of abscissa values, this is the hebbian short term activation of
     # receiving and sending unit
     #
     # th vector of threshold values with the same size as x, this is either the
-    # hebbian medium term activity of receiving and sending unit or the long
-    # term receiving unit activity
+    # hebbian medium term activation of receiving and sending unit or the long
+    # term receiving unit activation
     #
     get_dwt = function(x, th){
       f <- rep(0, length(x))
@@ -769,9 +816,9 @@ network <-  R6::R6Class("network",
     # upper: upper index to extract column, which corresponds to the sending
     # layer's last unit
     #
-    # lay: the receiving layer (to actually get the wt)
+    # lay: the receiving layer (to actually get the weights)
     get_weight_for_one_connection = function(cxn, lower, upper, lay){
-      ifelse(cxn > 0, return(lay$wt[, lower:upper]), return(NULL))
+      ifelse(cxn > 0, return(lay$weights[, lower:upper]), return(NULL))
     },
 
     # updt_recip_avg_act_n
@@ -783,12 +830,12 @@ network <-  R6::R6Class("network",
     # WtScaleSpec::SLayActScale, in LeabraConSpec.cpp
     #
     # recip_avg_act_n is a scaling factor: more active layers are balanced, such
-    # that every layer sends approximately the same average scaled activity to
+    # that every layer sends approximately the same average scaled activation to
     # other layers.
     #
     updt_recip_avg_act_n = function(){
 
-      lapply(self$lays, function(x) x$updt_recip_avg_act_n())
+      lapply(self$layers, function(x) x$updt_recip_avg_act_n())
       invisible(self)
     },
 
@@ -803,14 +850,14 @@ network <-  R6::R6Class("network",
     },
 
     set_new_exp_bounded_wts = function(dwt_list){
-      mapply(private$set_new_exp_bounded_wts_for_one_lay, dwt_list, self$lays)
+      mapply(private$set_new_exp_bounded_wts_for_one_lay, dwt_list, self$layers)
     },
 
     set_new_exp_bounded_wts_for_one_lay = function(dwt, lay){
-      if (!isempty(lay$wt)){
-        lay$wt <- ifelse(dwt > 0,
-                         lay$wt + (1 - lay$wt) * dwt,
-                         lay$wt + lay$wt * dwt)
+      if (!isempty(lay$weights)){
+        lay$weights <- ifelse(dwt > 0,
+                         lay$weights + (1 - lay$weights) * dwt,
+                         lay$weights + lay$weights * dwt)
       }
     },
 
@@ -846,7 +893,7 @@ network <-  R6::R6Class("network",
     dim_lays = NULL,
     cxn = NULL,
     w_init = NULL,
-    n_lays = NULL,  # number of lays (number of objs in "lays")
+    n_lays = NULL,  # number of layers (number of objs in "layers")
     n_units_in_net = NULL,
     n_units_in_lays = NULL,
 
@@ -863,7 +910,7 @@ network <-  R6::R6Class("network",
     g_i_gain = 2, # g_i_gain for layers, to control overall inhibition in a specific layer
     avg_l_lrn = list(),
     #dependent
-    m1 = NULL, # the slope in the left part of XCAL's "check mark"
+    #m1 = NULL, # the slope in the left part of XCAL's "check mark"
     cxn_greater_zero = matrix(), # binary version of cxn
     n_units_in_rcv_lays = matrix(), # number of units of receiving layer in cxn matrix
     n_units_in_send_lays = matrix(), # number of units of sending layer in cxn matrix

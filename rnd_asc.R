@@ -1,5 +1,6 @@
 # to reproduce example
-set.seed(22071904)
+#set.seed(22071904)
+#set.seed(1234532)
 
 # to later calculate error we use the cosine similarity
 cosine <- function(x, y){
@@ -7,13 +8,14 @@ cosine <- function(x, y){
 }
 
 # This program constructs a 3-layer random associator using the 'network',
-# 'layer', and 'unit' objects. It is a test of these classes, and a tutorial in how to construct networks with them.
+# 'layer', and 'unit' objects. It is a test of these classes, and a tutorial in
+# how to construct networks with them.
 
 # 1) First, specify the dimensions and connectivity of the layers At this
 # point, layers are either fully connected or unconnected
 
 # 1.1) Set the dimensions of the layers specifying 3 layers and their dimensions
-dim_lays <- list(c(1, 25), c(1, 100), c(1, 25))
+dim_lays <- list(c(1, 5), c(1, 10), c(1, 5))
 
 # 1.2) Specify connectivity between layers
 cxn <- matrix(c(0, 0, 0,
@@ -26,6 +28,7 @@ cxn <- matrix(c(0, 0, 0,
 # entries of row i.  The network constructor will normalize this matrix so that
 # if there are non-zero entries in a row, they add to 1.
 
+# choose g_i_gain very carefully!
 net <- network$new(dim_lays, cxn, g_i_gain = c(2, 2, 2))
 
 inputs_plus <- net$create_inputs(which_layers = c(1, 3),
@@ -35,7 +38,9 @@ inputs_plus <- net$create_inputs(which_layers = c(1, 3),
 inputs_minus <- lapply(inputs_plus, function(x) {x[3] <- list(NULL); return(x)})
 n_epochs <- 10
 
-outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus, inputs_plus, lrate = 0.8))
+outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
+                                                                 inputs_plus,
+                                                                 lrate = 0.5))
 
 # calc cosine
 
@@ -48,7 +53,8 @@ lapply(outs, extract_list_number, 3)
 overall_cosine <- function(outs, inputs_plus, layer){
   outs_layer <- extract_list_number(outs, layer)
   inputs_plus_layer <- extract_list_number(inputs_plus, layer)
-  mean(unlist(Map(function(x, y) 1 - cosine(x, y), outs_layer, inputs_plus_layer)))
+  mean(unlist(Map(function(x, y) 1 - cosine(x, y), outs_layer, inputs_plus_layer)),
+       na.rm = T)
 }
 
 cos_error <- sapply(outs, overall_cosine, inputs_plus, 3)
