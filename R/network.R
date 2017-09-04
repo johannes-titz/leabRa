@@ -28,28 +28,36 @@ NULL
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
-#' # create a network with 3 layers
-#' net <- network$new(list(c(5, 5), c(5, 10), c(5, 5))
+#' # create a small network with 3 layers
+#' net <- network$new(list(c(1, 5), c(1, 10), c(1, 5))
 #'
-#' net$g_e_avg # private values cannot be accessed
+#' net$m_in_s # private values cannot be accessed
 #' # if you want to see alle variables, you need to use the function
-#' l$get_layer_vars(show_dynamics = T, show_constants = T)
-#' # if you want to see a summary of all units without constant values
-#' l$get_unit_vars(show_dynamics = T, show_constants = F)
+#' net$get_network_vars(show_dynamics = T, show_constants = T)
+#' # if you want to see a summary of all units (with layer information) without
+#' # constant values
+#' net$get_layer_and_unit_vars(show_dynamics = T, show_constants = F)
 #'
-#' # let us clamp the activation of the 25 units to some random values between
-#' # 0.05 and 0.95
-#' acts <- 0.05 + runif(25, 0, .9)
-#' l$avg_act
-#' l$clamp_cycle(acts)
-#' l$avg_act
-#' # what happened to the unit acts?
-#' l$get_unit_acts()
-#' # compare with acts
-#' acts
-#' # scaled acts are scaled by the average activation of the layer and should be
-#' # smaller
-#' l$get_scaled_acts()
+#' # let us create 10 random inputs for layer 1 and 3
+#' inputs <- net$create_inputs(c(1, 3), 10)
+#'
+#' # the input in layer 1 should be associated with the output in layer 3; we
+#' # can use error driven learning to achieve this
+#'
+#' # first we will need the input for the minus phase (where no correct output
+#' # is presented)
+#' inputs_minus <- lapply(inputs_plus,
+#'                        function(x) {x[3] <- list(NULL);return(x)})
+#' # now we can learn with default parameters, inputs_plus is equivalent to
+#' # inputs; the output will be activations after each trial for the wohle net
+#' output <- net$learn_error_driven(inputs_minus, inputs)
+#'
+#' # let's compare the actual output with what should have been learned
+#' # we can use the mad_per_epoch for this; it will calculate the mean absolute
+#' # deviation for each epoch, we are interested in layer 3
+#' mad <- net$mad_per_epoch(output, inputs, 3)
+#' # the error should decrease with increasing epoch number
+#' plot(mad)
 #'
 #' @field layers a list of \code{\link{layer}} objects
 #' @field lrate learning rate, gain factor for how much the connection weights
@@ -57,9 +65,9 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{new(dim_lays, cxn, g_i_gain, w_init_fun = function(x)
-#'   0.3 + 0.4 * runif(x), w_init = NULL)}}{Creates an object of this
-#'   class with default parameters.
+#'   \item{\code{new(dim_lays, cxn, g_i_gain = rep(2, length(dim_lays)),
+#'   w_init_fun = function(x) 0.3 + 0.4 * runif(x), w_init = NULL)}}{Creates an
+#'   object of this class with default parameters.
 #'
 #'     \code{dim_lays} List of number pairs for rows and columns of the layers,
 #'     e.g. \code{list(c(5, 5), c(10, 10), c(5, 5))} for a 25 x 100 x 25
@@ -145,8 +153,7 @@ NULL
 #'    \item{\code{learn_self_organized(inputs, lrate,
 #'  n_cycles)}}{Learns to categorize inputs in a self-organized fashion.
 #'
-#'     \code{inputs_minus} Inputs for the minus phase (no correct output
-#'     ist presented).
+#'     \code{inputs} Inputs for cycling.
 #'
 #'     \code{lrate} Learning rate, default is 0.1.
 #'
@@ -412,6 +419,10 @@ network <-  R6::R6Class("network",
                                      number_of_patterns = length(inputs)),
                      SIMPLIFY = F)
       return(outs)
+    },
+
+    mad_per_epoch = function(outs, inputs_plus, layer){
+      sapply(outs, private$mad_for_one_epoch, inputs_plus, layer)
     },
 
     # fields -------------------------------------------------------------------
@@ -887,6 +898,27 @@ network <-  R6::R6Class("network",
     # matrix
     m_mapply = function(fun, x, y){
       matrix(mapply(fun, x, y), ncol = ncol(x))
+    },
+
+    # extract_list_number
+    #
+    # extracts a specific list element
+    extract_list_number = function(x, y){
+      lapply(x, function(x) x[[y]])
+    },
+
+    # mad_for_one_epoch
+    #
+    # calculates mean absolute deviation for one layer from two activation lists
+    # (e.g. one is the correct pattern, the other is what you get in the
+    # network); you need to specify which layer you want to extract
+    #
+    # output is the mean absolute deviation for each epoch
+    mad_for_one_epoch = function(epoch_outs, epoch_inputs_plus, layer){
+      outs_layer <- private$extract_list_number(epoch_outs, layer)
+      inputs_plus_layer <- private$extract_list_number(epoch_inputs_plus, layer)
+      mean(unlist(Map(function(x, y) abs(x-y), outs_layer, inputs_plus_layer)),
+           na.rm = T)
     },
 
     # fields -------------------------------------------------------------------
