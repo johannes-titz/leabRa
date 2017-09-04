@@ -1,61 +1,48 @@
-# to reproduce example
-#set.seed(22071904)
-#set.seed(1234532)
-
-# to later calculate error we use the cosine similarity
-cosine <- function(x, y){
-  sum(x * y) / (sqrt(sum(x ^ 2)) * sqrt(sum(y ^ 2)))
-}
-
 # This program constructs a 3-layer random associator using the 'network',
-# 'layer', and 'unit' objects. It is a test of these classes, and a tutorial in
-# how to construct networks with them.
+# 'layer', and 'unit' objects. It is a tiny test of these classes.
 
-# 1) First, specify the dimensions and connectivity of the layers At this
-# point, layers are either fully connected or unconnected
+# To reproduce the example we can use a seed. You can try to guess whose
+# birthday is on July 22nd, 1904.
+set.seed(07221904)
 
-# 1.1) Set the dimensions of the layers specifying 3 layers and their dimensions
-dim_lays <- list(c(1, 5), c(1, 10), c(1, 5))
+# Specify the dimensions and connectivity of the layers. At this point, layers
+# are either fully connected or unconnected.
 
-# 1.2) Specify connectivity between layers
+# Specifying 3 layers and their dimensions.
+dim_lays <- list(c(2, 5), c(2, 10), c(2, 5))
+
+# Specify connection strength between layers, if layer j sends projections to
+# layer i, then cxn[i, j] = strength > 0 and 0 otherwise. Strength specifies the
+# relative strength of that connection with respect to the other projections to
+# layer i.
 cxn <- matrix(c(0, 0, 0,
                 1, 0, 0.2,
                 0, 1, 0), nrow = 3, byrow = T)
 
-# cxn(i,j) = c means that layer i receives cxn from j, and that
-# they have a relative strength c. In this case, feedback cxn are 5
-# times weaker. The relative weight scale of layer i comes from the non-zero
-# entries of row i.  The network constructor will normalize this matrix so that
-# if there are non-zero entries in a row, they add to 1.
+# Create the network with default parameters; dim_lays and cxn is the minimum
+# you need to specify a network, but if constructing other networks you should
+# pay careful attention to g_i_gain, which controls overall inhibition in a
+# layer. If this value is not set carefully, you will likely not get what you
+# want.
+net <- network$new(dim_lays, cxn)
 
-# choose g_i_gain very carefully!
-net <- network$new(dim_lays, cxn, g_i_gain = c(2, 2, 2))
-
+# Create 15 random inputs with the convenience function create_inputs in the
+# network class. Of course you could do this on your own.
 inputs_plus <- net$create_inputs(which_layers = c(1, 3),
-                              n_inputs = 15, prop_active = .3)
+                                 n_inputs = 15,
+                                 prop_active = .3)
 
-# remove the inputs for the output layer for minus phase
+# Remove the inputs for the output layer (3) for minus phase.
 inputs_minus <- lapply(inputs_plus, function(x) {x[3] <- list(NULL); return(x)})
 n_epochs <- 10
 
+# Learn with default parameters, return value is the output activation after
+# every trial, which we will use to calculate the error.
 outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
                                                                  inputs_plus,
                                                                  lrate = 0.5))
-
-# calc cosine
-
-extract_list_number = function(x, y){
-  lapply(x, function(x) x[[y]])
-}
-
-lapply(outs, extract_list_number, 3)
-
-overall_cosine <- function(outs, inputs_plus, layer){
-  outs_layer <- extract_list_number(outs, layer)
-  inputs_plus_layer <- extract_list_number(inputs_plus, layer)
-  mean(unlist(Map(function(x, y) 1 - cosine(x, y), outs_layer, inputs_plus_layer)),
-       na.rm = T)
-}
-
-cos_error <- sapply(outs, overall_cosine, inputs_plus, 3)
-plot(cos_error)
+# The network class can calculate the mean absolute deviation for each epoch.
+# You can also use your own functions on these lists to calculate other types of
+# errors.
+mad <- net$mad_per_epoch(outs, inputs_plus, 3)
+plot(mad)
