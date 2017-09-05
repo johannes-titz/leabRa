@@ -1,18 +1,18 @@
 #' @include misc.R
 NULL
 
-#' Class to simulate a biologically realistic neuron
+#' leabra unit (neuron) class
 #'
 #' This class simulates a biologically realistic neuron in the lebra framework.
-#' When you use a layer class, you will see that a layer object has a variable
-#' (field) \code{units}, which is a list of unit objects.
+#' When you use a layer class, you will see that a \link{layer} object has a
+#' variable (field) \code{units}, which is a list of unit objects.
 #'
 #' @docType class
 #' @importFrom R6 R6Class
 #' @export
 #' @keywords data
 #' @return Object of \code{\link{R6Class}} with methods for calculating neuron
-#'   activity changes
+#'   activation changes.
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
@@ -46,18 +46,18 @@ NULL
 #' # add conductance g_e to plot, should approach g_e_raw
 #' lines(result$g_e, type = "b", col = "blue")
 #'
-#' @field act percentage activation ("firing rate") of the unit, which is sent
+#' @field act Percentage activation ("firing rate") of the unit, which is sent
 #'   to other units, think of it as a percentage of how many neurons are active
-#'   in a microcolumn of 100 neurons
-#' @field avg_s short-term running average activation, integrates over avg_ss (a
+#'   in a microcolumn of 100 neurons.
+#' @field avg_s Short-term running average activation, integrates over avg_ss (a
 #'   private variable, which integrates over act), represents plus phase
-#'   learning signal
-#' @field avg_m medium-term running average activation, integrates over avg_s,
-#'   represents minus phase learning signal
-#' @field avg_l long-term running average activation, integrates over avg_m,
-#'   drives long-term floating average for self-organized learning
-#' @field unit_number number of unit in layer, if there is only one unit, this
-#'   value will be 1
+#'   learning signal.
+#' @field avg_m Medium-term running average activation, integrates over avg_s,
+#'   represents minus phase learning signal.
+#' @field avg_l Long-term running average activation, integrates over avg_m,
+#'   drives long-term floating average for self-organized learning.
+#' @field unit_number Number of unit in layer, if the unit is not created within
+#'   a layer, this value will be 1.
 #'
 #' @section Methods:
 #' \describe{
@@ -68,7 +68,7 @@ NULL
 #'   conductance  \code{g_e_raw} and inhibitory conductance \code{g_i}.
 #'   Excitatory conductance depends on the weights to other units and the
 #'   activity of those other units. Inhibitory conductance depends on
-#'   feedforward and feedback inhibition. See layer cycle method.}
+#'   feedforward and feedback inhibition. See \link{layer} cycle method.}
 #'
 #'   \item{\code{clamp_cycle(act)}}{Clamps the value of \code{act}
 #'   to the \code{act} variable of the unit without any time integration. Then

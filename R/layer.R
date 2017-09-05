@@ -1,7 +1,7 @@
 #' @include unit.R
 NULL
 
-#' Class to simulate a biologically realistic layer of neurons (units)
+#' leabra layer class
 #'
 #' This class simulates a biologically realistic layer of neurons in the lebra
 #' framework. It consists of several \link{\code{unit}} objects in the variable

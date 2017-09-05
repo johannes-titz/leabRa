@@ -24,12 +24,16 @@ NULL
 #' @export
 #' @keywords data
 #' @return Object of \code{\link{R6Class}} with methods for calculating changes
-#'   of activation in a network of neurons organized in \code{\link{layer}}s
+#'   of activation in a network of neurons organized in \code{\link{layer}}s.
 #' @format \code{\link{R6Class}} object.
 #'
 #' @examples
 #' # create a small network with 3 layers
-#' net <- network$new(list(c(1, 5), c(1, 10), c(1, 5))
+#' dim_lays <- list(c(2, 5), c(2, 10), c(2, 5))
+#' cxn <- matrix(c(0, 0, 0,
+#'                 1, 0, 0.2,
+#'                 0, 1, 0), nrow = 3, byrow = T)
+#' net <- network$new(dim_lays, cxn)
 #'
 #' net$m_in_s # private values cannot be accessed
 #' # if you want to see alle variables, you need to use the function
@@ -40,28 +44,35 @@ NULL
 #'
 #' # let us create 10 random inputs for layer 1 and 3
 #' inputs <- net$create_inputs(c(1, 3), 10)
+#' inputs # a list of lists
 #'
 #' # the input in layer 1 should be associated with the output in layer 3; we
 #' # can use error driven learning to achieve this
 #'
 #' # first we will need the input for the minus phase (where no correct output
-#' # is presented)
-#' inputs_minus <- lapply(inputs_plus,
-#'                        function(x) {x[3] <- list(NULL);return(x)})
-#' # now we can learn with default parameters, inputs_plus is equivalent to
-#' # inputs; the output will be activations after each trial for the wohle net
-#' output <- net$learn_error_driven(inputs_minus, inputs)
-#'
+#' # is presented; layer 3 is NULL)
+#' inputs_minus <- lapply(inputs,
+#'                        function(x) {x[3] <- list(NULL); return(x)})
+#' inputs_minus # layer 3 is indeed NULL
+#' # now we can learn with default parameters; we will run 10 epochs,
+#' inputs_plus is equivalent to # inputs; the output will be activations after
+#' each trial for the wohle # network; this might take a while depending on your
+#' system
+#' n_epochs <- 10
+#' outs <- lapply(seq(n_epochs),
+#'                function(x) net$learn_error_driven(inputs_minus,
+#'                                                   inputs_plus,
+#'                                                   lrate = 0.5))
 #' # let's compare the actual output with what should have been learned
 #' # we can use the mad_per_epoch for this; it will calculate the mean absolute
-#' # deviation for each epoch, we are interested in layer 3
+#' # deviation for each epoch; we are interested in layer 3
 #' mad <- net$mad_per_epoch(output, inputs, 3)
 #' # the error should decrease with increasing epoch number
 #' plot(mad)
 #'
-#' @field layers a list of \code{\link{layer}} objects
-#' @field lrate learning rate, gain factor for how much the connection weights
-#'   should change when the method \code{chg_wt()} is called
+#' @field layers A list of \code{\link{layer}} objects.
+#' @field lrate Learning rate, gain factor for how much the connection weights
+#'   should change when the method \code{chg_wt()} is called.
 #'
 #' @section Methods:
 #' \describe{
@@ -74,8 +85,8 @@ NULL
 #'     network.
 #'
 #'     \code{cxn} Matrix specifying connection strength between layers, if layer
-#'     j sends projections to layer i, then \code{cxn[i, j] = strength > 0} and 0
-#'     otherwise. Strength specifies the relative strength of that connection
+#'     j sends projections to layer i, then \code{cxn[i, j] = strength > 0} and
+#'     0 otherwise. Strength specifies the relative strength of that connection
 #'     with respect to the other projections to layer i.
 #'
 #'     \code{g_i_gain = rep(2, length(dim_lays))} Vector of inhibitory
@@ -160,16 +171,31 @@ NULL
 #'     \code{n_cycles} How many cycles to run, default is 50.
 #'     }
 #'
+#'   \item{\code{mad_per_epoch = function(outs_per_epoch, inputs_plus,
+#'   layer)}}{Calculates mean absolute deviation for two lists of activations
+#'   for a specific layer. This can be used to compare whether the network has
+#'   learned what it was supposed to learn.
+#'
+#'     \code{outs_per_epoch} Output activations for entire network for each
+#'     trial for every epoch. This is what the network produced on its own.
+#'
+#'     \code{inputs_pluts} Original inputs for the plus phase. This is what the
+#'     network was supposed to learn.
+#'
+#'     \code{layer} For which layer to calculate the mean absolute deviation.
+#'     Usually, this is the "output" layer.}
+#'
 #'   \item{\code{set_weights(weights)}}{Sets new weights for entire network,
 #'   useful to load networks that have already learned and thus very specific
 #'   weights.
 #'
-#'     \code{weights} Matrix of matrices (like a cell array in matlab) with new
+#'   \code{weights} Matrix of matrices (like a cell array in matlab) with new
 #'   weight values.}
 #'
 #'   \item{\code{get_weights()}}{Returns the complete weight matrix, \code{w[i,
 #'   j]} contains the weight matrix for the projections from layer j to layer i.
-#'   Note that this is a matrix of matrices (equivalent to a matlab cell array).}
+#'   Note that this is a matrix of matrices (equivalent to a matlab cell
+#'   array).}
 #'
 #'   \item{\code{get_layer_and_unit_vars(show_dynamics = T, show_constants =
 #'   F)}}{Returns a data frame with the current state of all layer and unit
@@ -421,8 +447,8 @@ network <-  R6::R6Class("network",
       return(outs)
     },
 
-    mad_per_epoch = function(outs, inputs_plus, layer){
-      sapply(outs, private$mad_for_one_epoch, inputs_plus, layer)
+    mad_per_epoch = function(outs_per_epoch, inputs_plus, layer){
+      sapply(outs_per_epoch, private$mad_for_one_epoch, inputs_plus, layer)
     },
 
     # fields -------------------------------------------------------------------
