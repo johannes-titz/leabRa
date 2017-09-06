@@ -4,7 +4,7 @@ NULL
 #' leabra layer class
 #'
 #' This class simulates a biologically realistic layer of neurons in the lebra
-#' framework. It consists of several \link{\code{unit}} objects in the variable
+#' framework. It consists of several \code{\link{unit}} objects in the variable
 #' (field) \code{units} and some layer-specific variables.
 #'
 #' @docType class
@@ -37,33 +37,21 @@ NULL
 #' activations
 #' # scaled activations are scaled by the average activation of the layer and should be
 #' # smaller
-#' l$get_scaled_acts()
+#' l$get_unit_scaled_acts()
 #'
-# TODO-----------------------------------------
-#' # let us run 10 cycles with unclamped activation and output the activation
-#' # produced because of changes in conductance
-#' l <- layer$new(c(5, 5))
-#' cycle_number <- 1:10
-#' intern_input <- 0.05 + runif(25, 0, .9)
-#' result <- lapply(cycle_number, function(x)
-#'                  l$cycle(intern_input = )$get_vars())
-#' # make a data frame out of the list
-#' result <- plyr::ldply(result)
-#' # plot act
-#' plot(result$act, type = "b", xlab = "cycle", ylab = "act")
-#' # add conductance g_e to plot, should approach g_e_raw
-#' lines(result$g_e, type = "b", col = "blue")
-#'
-#' @field units a list with all the \link{\code{unit}} objects of the layer
-#' @field weights a receiving \times sending weight matrix, where the receiving units
-#'   (row) has the current weight values for the sending units (column)
-#' @field ce_weights sigmoidal contrast-enhanced version of the weight matrix
-#'   \code{weights}
-#' @field n number of units in layer
-#' @field layer_number layer number in network (this is 1 if you create
-#' a layer on your own, without the network class)
-#' @field avg_act the average activiation of all units in the layer
-#' (this is an active binding)
+#' @field units A list with all \code{\link{unit}} objects of the layer.
+#' @field avg_act The average activiation of all units in the layer
+#' (this is an active binding).
+#' @field n Number of units in layer.
+#' @field weights A receiving x sending weight matrix, where the receiving units
+#'   (rows) has the current weight values for the sending units (columns). The
+#'   weights will be set by the \code{\link{network}} object, because they
+#'   depend on the connection to other layers.
+#' @field ce_weights Sigmoidal contrast-enhanced version of the weight matrix
+#'   \code{weights}. These weights will also be set by the \code{\link{network}}
+#'   object.
+#' @field layer_number Layer number in network (this is 1 if you create
+#' a layer on your own, without the network class).
 #'
 #' @section Methods:
 #' \describe{
@@ -102,7 +90,7 @@ NULL
 #'
 #'   \item{\code{clamp_cycle(activations)}}{Iterates one time step with layer
 #'   object with clamped activations, meaning that activations are
-#'   instantenously set without time integration.)
+#'   instantenously set without time integration.
 #'
 #'     \code{activations} Activations you want to clamp to the units in the
 #'     layer.}
@@ -125,13 +113,13 @@ NULL
 #'   \item{\code{reset(random = F)}}{Sets the activation and activation averages
 #' of all units to 0. Used to begin trials from a stationary point.
 #'
-#'     \code{random} Logical variable, if TRUE the activation ist set randomly
+#'     \code{random} Logical variable, if TRUE the activations are set randomly
 #' between .05 and .95 for every unit instead of 0.}
 #'
 #'   \item{\code{set_ce_weights()}}{Sets contrast enhanced weight values.}
 #'
 #'   \item{\code{get_unit_vars(show_dynamics = T, show_constants = F)}}{Returns
-#'   a data frame with with the current state of all unit variables in the
+#'   a data frame with the current state of all unit variables in the
 #'   layer. Every row is a unit. You can choose whether you want dynamic values
 #'   and / or constant values. This might be useful if you want to analyse what
 #'   happens in units of a layer, which would otherwise not be possible, because
@@ -142,9 +130,8 @@ NULL
 #' You can choose whether you want dynamic values and / or constant values. This
 #' might be useful if you want to analyse what happens in a layer, which would
 #' otherwise not be possible, because some of the variables (fields) are private
-#' in the layer class.}
+#' in the layer class.}}
 #'
-#' }
 layer <- R6::R6Class("layer",
   #public ----------------------------------------------------------------------
   public = list(
