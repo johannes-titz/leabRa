@@ -12,12 +12,12 @@ NULL
 #' network-specific variables.
 #'
 #' @references O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
-#' Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
-#' Edition. URL: http://ccnbook.colorado.edu
+#'   Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
+#'   (partial) Edition. URL: \url{http://ccnbook.colorado.edu}
 #'
 #' @references Have also a look at
-#'   https://grey.colorado.edu/emergent/index.php/Leabra (especially the link to
-#'   the matlab code) and https://en.wikipedia.org/wiki/Leabra
+#'   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
+#'   link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
 #'
 #' @docType class
 #' @importFrom R6 R6Class
@@ -55,16 +55,16 @@ NULL
 #'                        function(x) {x[3] <- list(NULL); return(x)})
 #' inputs_minus # layer 3 is indeed NULL
 #' # now we can learn with default parameters; we will run 10 epochs,
-#' inputs_plus is equivalent to # inputs; the output will be activations after
-#' each trial for the wohle # network; this might take a while depending on your
-#' system
+#' # inputs_plus is equivalent to inputs; the output will be activations after
+#' # each trial for the wohle network; this might take a while depending on your
+#' # system
 #' n_epochs <- 10
-#' outs <- lapply(seq(n_epochs),
-#'                function(x) net$learn_error_driven(inputs_minus,
-#'                                                   inputs_plus,
-#'                                                   lrate = 0.5))
-#' # let's compare the actual output with what should have been learned
-#' # we can use the mad_per_epoch for this; it will calculate the mean absolute
+#' output <- lapply(seq(n_epochs),
+#'                  function(x) net$learn_error_driven(inputs_minus,
+#'                                                     inputs,
+#'                                                     lrate = 0.5))
+#' # let's compare the actual output with what should have been learned we can
+#' # use the method mad_per_epoch for this; it will calculate the mean absolute
 #' # deviation for each epoch; we are interested in layer 3
 #' mad <- net$mad_per_epoch(output, inputs, 3)
 #' # the error should decrease with increasing epoch number
@@ -89,10 +89,9 @@ NULL
 #'     0 otherwise. Strength specifies the relative strength of that connection
 #'     with respect to the other projections to layer i.
 #'
-#'     \code{g_i_gain = rep(2, length(dim_lays))} Vector of inhibitory
-#'     conductance gain values for every layer. This comes in handy to control
-#'     overall level of inhibition of specific layers. Default is 2 for every
-#'     layer.
+#'     \code{g_i_gain} Vector of inhibitory conductance gain values for every
+#'     layer. This comes in handy to control overall level of inhibition of
+#'     specific layers. Default is 2 for every layer.
 #'
 #'     \code{w_init_fun} Function that specifies how random weights
 #'     should be created, default value is to generate weights between
@@ -161,8 +160,8 @@ NULL
 #'     \code{n_cycles_plus} How many cycles to run in the plus phase,
 #'     default is 25.}
 #'
-#'    \item{\code{learn_self_organized(inputs, lrate,
-#'  n_cycles)}}{Learns to categorize inputs in a self-organized fashion.
+#'  \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles =
+#'  50)}}{Learns to categorize inputs in a self-organized fashion.
 #'
 #'     \code{inputs} Inputs for cycling.
 #'
@@ -171,7 +170,7 @@ NULL
 #'     \code{n_cycles} How many cycles to run, default is 50.
 #'     }
 #'
-#'   \item{\code{mad_per_epoch = function(outs_per_epoch, inputs_plus,
+#'   \item{\code{mad_per_epoch(outs_per_epoch, inputs_plus,
 #'   layer)}}{Calculates mean absolute deviation for two lists of activations
 #'   for a specific layer. This can be used to compare whether the network has
 #'   learned what it was supposed to learn.

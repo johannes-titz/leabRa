@@ -142,7 +142,9 @@ NULL
 #' You can choose whether you want dynamic values and / or constant values. This
 #' might be useful if you want to analyse what happens in a layer, which would
 #' otherwise not be possible, because some of the variables (fields) are private
-#' in the layer class.}}
+#' in the layer class.}
+#'
+#' }
 layer <- R6::R6Class("layer",
   #public ----------------------------------------------------------------------
   public = list(

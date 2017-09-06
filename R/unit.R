@@ -4,7 +4,7 @@ NULL
 #' leabra unit (neuron) class
 #'
 #' This class simulates a biologically realistic neuron in the lebra framework.
-#' When you use a layer class, you will see that a \link{layer} object has a
+#' When you use the layer class, you will see that a \link{layer} object has a
 #' variable (field) \code{units}, which is a list of unit objects.
 #'
 #' @docType class
@@ -65,9 +65,9 @@ NULL
 #'   parameters.}
 #'
 #'   \item{\code{cycle(g_e_raw, g_i)}}{Cycles 1 ms with given excitatory
-#'   conductance  \code{g_e_raw} and inhibitory conductance \code{g_i}.
-#'   Excitatory conductance depends on the weights to other units and the
-#'   activity of those other units. Inhibitory conductance depends on
+#'   conductance \code{g_e_raw} and inhibitory conductance \code{g_i}.
+#'   Excitatory conductance depends on the connection weights to other units and
+#'   the activity of those other units. Inhibitory conductance depends on
 #'   feedforward and feedback inhibition. See \link{layer} cycle method.}
 #'
 #'   \item{\code{clamp_cycle(act)}}{Clamps the value of \code{act}
