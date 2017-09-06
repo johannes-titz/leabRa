@@ -142,9 +142,9 @@ NULL
 #'     \code{prop_active} Average proportion of active units in the input
 #'     patterns, default is 0.3.}
 #'
-#'   \item{\code{learn_error_driven(inputs_minus, inputs_plus, lrate =
-#'   0.1, n_cycles_minus = 50, n_cycles_plus = 25)}}{Learns to associate
-#'   specific inputs with specific outputs in an error-driven fashion.
+#'   \item{\code{learn_error_driven(inputs_minus, inputs_plus, lrate = 0.1,
+#'   n_cycles_minus = 50, n_cycles_plus = 25, show_progress = T)}}{Learns to
+#'   associate specific inputs with specific outputs in an error-driven fashion.
 #'
 #'     \code{inputs_minus} Inputs for the minus phase (the to be learned output
 #'     ist not presented).
@@ -160,14 +160,19 @@ NULL
 #'     \code{n_cycles_plus} How many cycles to run in the plus phase,
 #'     default is 25.}
 #'
-#'  \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles =
-#'  50)}}{Learns to categorize inputs in a self-organized fashion.
+#'     \code{show_progress} Whether progress of learning should be shown.
+#'
+#'  \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles = 50,
+#'  show_progress = T)}}{Learns to categorize inputs in a self-organized
+#'  fashion.
 #'
 #'     \code{inputs} Inputs for cycling.
 #'
 #'     \code{lrate} Learning rate, default is 0.1.
 #'
 #'     \code{n_cycles} How many cycles to run, default is 50.
+#'
+#'     \code{show_progress} Whether progress of learning should be shown.
 #'     }
 #'
 #'   \item{\code{mad_per_epoch(outs_per_epoch, inputs_plus,
@@ -421,7 +426,8 @@ network <-  R6::R6Class("network",
     },
 
     learn_error_driven = function(inputs_minus, inputs_plus, lrate = 0.1,
-                                  n_cycles_minus = 50, n_cycles_plus = 25){
+                                  n_cycles_minus = 50, n_cycles_plus = 25,
+                                  show_progress = T){
       outs <- mapply(private$learn_one_pattern_error_driven,
                      inputs_minus,
                      inputs_plus,
@@ -429,19 +435,21 @@ network <-  R6::R6Class("network",
                      MoreArgs = list(n_cycles_minus = n_cycles_minus,
                                      n_cycles_plus = n_cycles_plus,
                                      lrate = lrate,
-                                     number_of_patterns = length(inputs_minus)),
+                                     number_of_patterns = length(inputs_minus),
+                                     show_progress = show_progress),
                      SIMPLIFY = F)
       return(outs)
     },
 
     learn_self_organized = function(inputs, lrate = 0.1,
-                                    n_cycles = 50){
+                                    n_cycles = 50, show_progress = F){
       outs <- mapply(private$learn_one_pattern_self_organized,
                      inputs,
                      pattern_number = seq(length(inputs)),
                      MoreArgs = list(n_cycles_minus = n_cycles,
                                      lrate = lrate,
-                                     number_of_patterns = length(inputs)),
+                                     number_of_patterns = length(inputs),
+                                     show_progress = show_progress),
                      SIMPLIFY = F)
       return(outs)
     },
@@ -506,7 +514,8 @@ network <-  R6::R6Class("network",
                                               n_cycles_minus = 50,
                                               n_cycles_plus = 25,
                                               lrate = 0.1,
-                                              reset = T){
+                                              reset = T,
+                                              show_progress = T){
       # minus phase
       private$run_trial(input_minus, n_cycles_minus, lrate = lrate,
                         reset = reset)
@@ -520,10 +529,12 @@ network <-  R6::R6Class("network",
       self$chg_wt()
 
       # show progress
-      if (pattern_number == number_of_patterns) {
-        cat(".\n")
-      } else {
-          cat(".")
+      if (show_progress == T){
+        if (pattern_number == number_of_patterns) {
+          cat(".\n")
+        } else {
+            cat(".")
+        }
       }
       return(output)
     },
@@ -535,7 +546,8 @@ network <-  R6::R6Class("network",
                                               number_of_patterns,
                                               n_cycles_minus = 50,
                                               lrate = 0.1,
-                                              reset = T){
+                                              reset = T,
+                                              show_progress = T){
       # minus phase
       private$run_trial(input_minus, n_cycles_minus, lrate = lrate,
                         reset = reset)
@@ -546,10 +558,12 @@ network <-  R6::R6Class("network",
       self$chg_wt()
 
       # show progress
-      if (pattern_number == number_of_patterns) {
-        cat(".\n")
-      } else {
-        cat(".")
+      if (show_progress == T){
+        if (pattern_number == number_of_patterns) {
+          cat(".\n")
+        } else {
+          cat(".")
+        }
       }
 
       return(output)

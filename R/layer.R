@@ -35,8 +35,8 @@ NULL
 #' l$get_unit_acts()
 #' # compare with activations
 #' activations
-#' # scaled activations are scaled by the average activation of the layer and should be
-#' # smaller
+#' # scaled activations are scaled by the average activation of the layer and
+#' # should be smaller
 #' l$get_unit_scaled_acts()
 #'
 #' @field units A list with all \code{\link{unit}} objects of the layer.
