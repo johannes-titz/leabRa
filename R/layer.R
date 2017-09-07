@@ -193,15 +193,14 @@ layer <- R6::R6Class("layer",
       invisible(self)
     },
 
-    get_unit_act_avgs = function(m_avg_prc_in_s_avg, avg_l_lrn_min,
-                                 avg_l_lrn_max){
+    get_unit_act_avgs = function(){
       avg_s <- sapply(self$units, function(x) x$avg_s)
       avg_m <- sapply(self$units, function(x) x$avg_m)
       avg_l <- sapply(self$units, function(x) x$avg_l)
 
       # obatining avg_s_with_m
-      avg_s_with_m <- m_avg_prc_in_s_avg * avg_m +
-        (1 - m_avg_prc_in_s_avg) * avg_s
+      avg_s_with_m <- private$m_avg_prc_in_s_avg * avg_m +
+        (1 - private$m_avg_prc_in_s_avg) * avg_s
 
       # use constant avg_l_lrn value instead of calculating
       avg_l_lrn <- rep(private$avg_l_lrn, length(avg_l))
@@ -233,8 +232,9 @@ layer <- R6::R6Class("layer",
       invisible(self)
     },
 
-    set_ce_weights = function(off, gain){
-      self$ce_weights <- 1 / (1 + (off * (1 - self$weights) / self$weights) ^ gain)
+    set_ce_weights = function(){
+      self$ce_weights <- 1 / (1 + (private$ce_off * (1 - self$weights) /
+                                     self$weights) ^ private$ce_gain)
       invisible(self)
     },
 
@@ -252,7 +252,9 @@ layer <- R6::R6Class("layer",
         g_e_avg = private$g_e_avg,
         g_fbi = private$g_fbi,
         g_ffi = private$g_ffi,
-        recip_avg_act_n = private$recip_avg_act_n
+        recip_avg_act_n = private$recip_avg_act_n,
+        ce_off = private$ce_off,
+        ce_gain = private$ce_gain
       )
       constant_vars <-
         data.frame(
@@ -300,11 +302,14 @@ layer <- R6::R6Class("layer",
     g_fbi_gain = 0.5,        # gain for feedback inhibition
     g_fbi_dt = 1 / 1.4,      # time step for fb inhibition (fb_tau = 1.4)
     g_i_gain = 2,            # overall gain on inhibition
-    avg_act_inert_dt = 0.01  # time step constant for updating avg_act_inert
+    avg_act_inert_dt = 0.01,  # time step constant for updating avg_act_inert
     # in leabra docu, this constant value can be used instead instead of
     # computing, but note that it is not needed for output layers and for purely
     # self-organized layers it will reduce amount of learning substantially.
-    avg_l_lrn = 0.0004
+    avg_l_lrn = 0.0004,
+    m_avg_prc_in_s_avg = 0.1, # proportion of medium to short term avg
+    ce_off =  1,        # "offset" in the SIG function for contrast enhancement
+    ce_gain = 6         # gain in the SIG function for contrast enhancement
   ),
   # active ---------------------------------------------------------------------
   active = list(

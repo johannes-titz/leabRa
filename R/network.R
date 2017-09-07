@@ -279,9 +279,7 @@ network <-  R6::R6Class("network",
 
       # Extracting the averages for all layers
       avgs <- lapply(self$layers,
-                     function(x) x$get_unit_act_avgs(private$m_in_s,
-                                                     private$avg_l_lrn_min,
-                                                     private$avg_l_lrn_max))
+                     function(x) x$get_unit_act_avgs())
       avg_l <- lapply(avgs, function(x) x$avg_l)
       avg_m <- lapply(avgs, function(x) x$avg_m)
       avg_s_with_m <- lapply(avgs, function(x) x$avg_s_with_m)
@@ -337,7 +335,7 @@ network <-  R6::R6Class("network",
       dwt_list <- apply(dwt_null, 1, function(x) Reduce(cbind, x))
 
       private$set_new_exp_bounded_wts(dwt_list)
-      lapply(self$layers, function(x) x$set_ce_weights(private$off, private$gain))
+      lapply(self$layers, function(x) x$set_ce_weights())
       invisible(self)
     },
 
@@ -375,7 +373,7 @@ network <-  R6::R6Class("network",
                        self$layers, wts)
 
       # set the contrast-enhanced version of the weights
-      lapply(self$layers, function(x) x$set_ce_weights(private$off, private$gain))
+      lapply(self$layers, function(x) x$set_ce_weights())
       invisible(self)
     },
 
@@ -411,9 +409,7 @@ network <-  R6::R6Class("network",
           m_in_s = private$m_in_s,
           m_lrn = private$m_lrn,
           d_thr = private$d_thr,
-          d_rev = private$d_rev,
-          off = private$off,
-          gain = private$gain
+          d_rev = private$d_rev
         )
       if (show_dynamics == T) df <- cbind(df, dynamic_vars)
       if (show_constants == T) df <- cbind(df, constant_vars)
@@ -722,7 +718,7 @@ network <-  R6::R6Class("network",
     create_wt_for_lays = function(){
       wts <- apply(private$w_init, 1, function(x) Reduce("cbind", x))
       Map(function(x, y) if(!isempty(y)) x$weights <- y, self$layers, wts)
-      lapply(self$layers, function(x) x$set_ce_weights(private$off, private$gain))
+      lapply(self$layers, function(x) x$set_ce_weights())
     },
 
     # second argument test in constructor---------------------------------------
@@ -971,13 +967,9 @@ network <-  R6::R6Class("network",
     # constants
     avg_l_lrn_max = 0.5, # max amount of "BCM" learning in XCAL
     avg_l_lrn_min = 0.0001, # min amount of "BCM" learning in XCAL
-    m_in_s = 0.1, # proportion of medium to short term avgs. in XCAL
     m_lrn = 1, # proportion of error-driven learning in XCAL
     d_thr = 0.0001, # threshold for XCAL "check mark" function
     d_rev = 0.1, # reversal value for XCAL "check mark" function
-    off = 1, # "offset" in the SIG function for contrast enhancement
-    gain = 6, # gain in the SIG function for contrast enhancement
-
     g_i_gain = 2, # g_i_gain for layers, to control overall inhibition in a specific layer
     avg_l_lrn = list(),
     #dependent
