@@ -26,11 +26,11 @@ NULL
 #' # let us clamp the activation to 0.7
 #' u$act
 #' u$clamp_cycle(0.7)
-#' c(u$act, u$avg_s, u$avg_m, u$avg_l, u$avg_l_prc)
+#' c(u$act, u$avg_s, u$avg_m, u$avg_l)
 #' # act is indeed 0.7, but avg_l was not updated, this only happens before the
 #' # weights are changed, let us update it now
 #' u$updt_avg_l()
-#' c(u$act, u$avg_s, u$avg_m, u$avg_l, u$avg_l_prc)
+#' c(u$act, u$avg_s, u$avg_m, u$avg_l)
 #' # seems to work
 #'
 #' # let us run 10 cycles with unclamped activation and output the activation
@@ -56,6 +56,8 @@ NULL
 #'   represents minus phase learning signal.
 #' @field avg_l Long-term running average activation, integrates over avg_m,
 #'   drives long-term floating average for self-organized learning.
+#' @field avg_l_min Minimum value of avg_l.
+#' @field avg_l_gain Gain factor multiplied with avg_m when updating avg_l.
 #' @field unit_number Number of unit in layer, if the unit is not created within
 #'   a layer, this value will be 1.
 #'
@@ -76,10 +78,7 @@ NULL
 #'
 #'   \item{\code{updt_avg_l()}}{Updates the variable \code{avg_l}. This usually
 #'   happens before the weights are changed in the network (after the plus
-#'   phase), and not every cycle. If avg_m is smaller than 0.2 (or equal) avg_l
-#'   tends to move towards the constant minium avg_l value (0.1). If avg_m is
-#'   larger than 0.2, than avg_l will tend to go to the constant maximum avg_l
-#'   value (1.5)}
+#'   phase), and not every cycle.}
 #'
 #'   \item{\code{get_vars(show_dynamics = T, show_constants = F)}}{Returns a
 #'   data frame with 1 row with the current state of all the variables of the
@@ -170,13 +169,9 @@ unit <- R6::R6Class("unit",
     },
 
     updt_avg_l = function(){
-      if (self$avg_m > 0.2){
-        self$avg_l <- self$avg_l + private$l_dt *
-          (private$avg_l_max - self$avg_m)
-        } else{
-          self$avg_l <- self$avg_l + private$l_dt *
-            (private$avg_l_min - self$avg_m)
-          }
+      avg_l <- self$avg_l + private$l_dt * (private$avg_l_gain * self$avg_m -
+                                              self$avg_l)
+      self$avg_l <- max(avg_l, 0.2)
       invisible(self)
     },
 
@@ -202,7 +197,6 @@ unit <- R6::R6Class("unit",
         avg_s = self$avg_s,
         avg_m = self$avg_m,
         avg_l = self$avg_l,
-        avg_l_prc = self$avg_l_prc,
         g_e = private$g_e,
         v = private$v,
         v_eq = private$v_eq,
@@ -221,7 +215,7 @@ unit <- R6::R6Class("unit",
           m_dt             = private$m_dt,
           v_dt             = private$v_dt,
           i_adapt_dt       = private$i_adapt_dt,
-          avg_l_max        = private$avg_l_max,
+          avg_l_gain       = private$avg_l_gain,
           avg_l_min        = private$avg_l_min,
           v_rev_e          = private$v_rev_e,
           v_rev_l          = private$v_rev_l,
@@ -242,16 +236,11 @@ unit <- R6::R6Class("unit",
     avg_s = 0.2,
     avg_m = 0.2,
     avg_l = 0.2,
+    avg_l_min = 0.1,      # min value of avg_l
+    avg_l_gain = 2.5,
     # number of unit in the layer, if you create a single unit object, this is
     # one, otherwise the layer will set this value
     unit_number = 1
-  ),
-
-  # active ---------------------------------------------------------------------
-  active = list(
-    avg_l_prc = function(){
-      (self$avg_l - private$avg_l_min) / (private$avg_l_max - private$avg_l_min)
-    }
   ),
 
   # private --------------------------------------------------------------------
@@ -350,8 +339,6 @@ unit <- R6::R6Class("unit",
   l_dt = 0.1,           # time step constant for long-term average
 
   # other
-  avg_l_max = 1.5,      # max value of avg_l
-  avg_l_min = 0.1,      # min value of avg_l
   v_rev_e = 1,          # excitatory reversal potential
   v_rev_i = .25,        # inhibitory reversal potential
   v_rev_l = 0.3,        # leak reversal potential
