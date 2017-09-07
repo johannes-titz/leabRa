@@ -118,8 +118,12 @@ NULL
 #'     summed to excitatory conductance values (note: not to the activation) of
 #'     the units in the layers.}
 #'
-#'   \item{\code{chg_wt()}}{Changes the weights of the entire network with the
-#'   XCAL learning equation.}
+#'   \item{\code{chg_wt(gain_e_lrn)}}{Changes the weights of the entire network
+#'   with the XCAL learning equation.}
+#'
+#'     \code{gain_e_lrn} Gain factor for error driven learning. Default is 1. If
+#'     you want only self-organized learning, you can set this value to 0. This
+#'     is done automatically when you call the method learn_self_organized
 #'
 #'   \item{\code{reset(random = F)}}{Sets the activation of all units in all
 #'   layers to 0, and sets all activation time averages to that value. Used to
@@ -273,7 +277,7 @@ network <-  R6::R6Class("network",
       invisible(self)
     },
 
-    chg_wt = function(){
+    chg_wt = function(gain_e_lrn = private$m_lrn){
       private$updt_recip_avg_act_n()
       lapply(self$layers, function(x) x$updt_unit_avg_l())
 
@@ -322,7 +326,7 @@ network <-  R6::R6Class("network",
       dwt_l <- private$m_mapply(function(x, y) x * y, dwt_l, avg_l_lrn_rcv)
 
       # multiply medium average by gain for medium (versus long)
-      dwt_m <- apply(dwt_m, c(1, 2), function(x) x[[1]] * private$m_lrn)
+      dwt_m <- apply(dwt_m, c(1, 2), function(x) x[[1]] * gain_e_lrn)
 
       # combine both dwts and multiply by learning rate
       dwt <- private$m_mapply(function(x, y) x + y, dwt_m, dwt_l)
@@ -551,7 +555,7 @@ network <-  R6::R6Class("network",
       output <- lapply(self$layers, function(x) x$get_unit_acts())
 
       # change weights
-      self$chg_wt()
+      self$chg_wt(gain_e_lrn = 0)
 
       # show progress
       if (show_progress == T){
@@ -903,9 +907,9 @@ network <-  R6::R6Class("network",
 
     set_new_exp_bounded_wts_for_one_lay = function(dwt, lay){
       if (!isempty(lay$weights)){
-        lay$weights <- ifelse(dwt > 0,
-                         lay$weights + (1 - lay$weights) * dwt,
-                         lay$weights + lay$weights * dwt)
+        lay$weights <- lay$weights + dwt * ifelse(dwt > 0,
+                                                  1 - lay$weights,
+                                                  lay$weights)
       }
     },
 
