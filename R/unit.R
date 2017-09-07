@@ -56,8 +56,6 @@ NULL
 #'   represents minus phase learning signal.
 #' @field avg_l Long-term running average activation, integrates over avg_m,
 #'   drives long-term floating average for self-organized learning.
-#' @field avg_l_min Minimum value of avg_l.
-#' @field avg_l_gain Gain factor multiplied with avg_m when updating avg_l.
 #' @field unit_number Number of unit in layer, if the unit is not created within
 #'   a layer, this value will be 1.
 #'
@@ -171,7 +169,7 @@ unit <- R6::R6Class("unit",
     updt_avg_l = function(){
       avg_l <- self$avg_l + private$l_dt * (private$avg_l_gain * self$avg_m -
                                               self$avg_l)
-      self$avg_l <- max(avg_l, 0.2)
+      self$avg_l <- max(avg_l, private$avg_l_min)
       invisible(self)
     },
 
@@ -236,8 +234,6 @@ unit <- R6::R6Class("unit",
     avg_s = 0.2,
     avg_m = 0.2,
     avg_l = 0.2,
-    avg_l_min = 0.1,      # min value of avg_l
-    avg_l_gain = 2.5,
     # number of unit in the layer, if you create a single unit object, this is
     # one, otherwise the layer will set this value
     unit_number = 1
@@ -326,6 +322,8 @@ unit <- R6::R6Class("unit",
   i_adapt = 0,
   spike = 0,
   i_net = 0,
+  avg_l_min = 0.1,      # min value of avg_l
+  avg_l_gain = 2.5,
 
   # constant values-------------------------------------------------------------
   # time step constants
