@@ -105,11 +105,11 @@ unit <- R6::R6Class("unit",
       i_e <- private$g_e * (private$v_rev_e - private$v)
       i_i <- g_i * (private$v_rev_i - private$v)
       i_l <- private$g_l * (private$v_rev_l - private$v)
-      i_net <- i_e + i_i + i_l
+      private$i_net <- i_e + i_i + i_l
 
       # almost half-step method for updating v (i_adapt doesn't half step)
       v_h <- private$v + 0.5 * private$cyc_dt * private$v_dt *
-        (i_net - private$i_adapt)
+        (private$i_net - private$i_adapt)
       i_e_h <- private$g_e * (private$v_rev_e - v_h)
       i_i_h <- g_i * (private$v_rev_i - v_h)
       i_l_h <- private$g_l * (private$v_rev_l - v_h)
@@ -117,8 +117,15 @@ unit <- R6::R6Class("unit",
 
       private$v <- private$v + private$cyc_dt * private$v_dt *
         (i_net_h - private$i_adapt)
+
+      # new rate coded version of i_net
+      i_e_r <- private$g_e * (private$v_rev_e - private$v_eq)
+      i_i_r <- g_i * (private$v_rev_i - private$v_eq)
+      i_l_r <- private$g_l * (private$v_rev_l - private$v_eq)
+      i_net_r <- i_e_r + i_i_r + i_l_r
+
       private$v_eq <- private$v_eq + private$cyc_dt * private$v_dt *
-        (i_net_h - private$i_adapt)
+        (i_net_r - private$i_adapt)
 
       # Finding activation
       # finding threshold excitatory conductance
@@ -130,6 +137,7 @@ unit <- R6::R6Class("unit",
       if (private$v > private$spk_thr){
         private$spike <- 1
         private$v <- private$v_reset
+        private$i_net <- 0
       }  else {
         private$spike <- 0
       }
@@ -199,7 +207,8 @@ unit <- R6::R6Class("unit",
         v = private$v,
         v_eq = private$v_eq,
         i_adapt = private$i_adapt,
-        spike = private$spike
+        spike = private$spike,
+        i_net = private$i_net
       )
 
       constant_vars <-
@@ -327,6 +336,7 @@ unit <- R6::R6Class("unit",
   v_eq = 0.3,
   i_adapt = 0,
   spike = 0,
+  i_net = 0,
 
   # constant values-------------------------------------------------------------
   # time step constants
