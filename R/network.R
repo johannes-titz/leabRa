@@ -306,12 +306,12 @@ network <-  R6::R6Class("network",
       # this is independent of sending; only the receiving neuron's long term
       # average is important for self-organized learning
       l_rcv <- private$m_mapply(function(x, y) matrix(rep(x, y), ncol = y),
-                                avg_l_rcv, private$n_units_in_rcv_lays)
+                                avg_l_rcv, private$n_units_in_snd_lays)
 
       avg_l_lrn_rcv <- private$m_mapply(function(x, y) matrix(rep(x, y),
                                                               ncol = y),
                                 avg_l_lrn_rcv,
-                                private$n_units_in_rcv_lays)
+                                private$n_units_in_snd_lays)
       # weights changes
       dwt_m <- private$m_mapply(function(x, y) private$get_dwt(x, y),
                                 s_hebb,
@@ -365,7 +365,7 @@ network <-  R6::R6Class("network",
 
       ## Now we set the weights
       # first find how many units project to the layer in all the network
-      lay_inp_n <- apply(private$n_units_in_rcv_lays, 1, sum)
+      lay_inp_n <- apply(private$n_units_in_snd_lays, 1, sum)
 
       # make one weight matrix for every layer by collapsing receiving layer
       # weights columnwise, only do this for layers that receive something at
@@ -595,8 +595,8 @@ network <-  R6::R6Class("network",
     create_rnd_wt_matrix = function(fun = runif){
       private$w_init <- matrix(mapply(private$create_wt_matrix_for_one_cxn,
                                       private$cxn,
+                                      private$n_units_in_snd_lays,
                                       private$n_units_in_rcv_lays,
-                                      private$n_units_in_send_lays,
                                       MoreArgs = list(fun = fun)),
                                nrow = nrow(private$cxn))
     },
@@ -688,34 +688,34 @@ network <-  R6::R6Class("network",
     set_all_unit_numbers = function(){
       private$n_units_in_lays <- sapply(self$layers, function(x) x$n)
       private$n_units_in_net <- Reduce("+", private$n_units_in_lays)
+      private$set_n_units_in_snd_lays()
       private$set_n_units_in_rcv_lays()
-      private$set_n_units_in_send_lays()
     },
 
-    set_n_units_in_rcv_lays = function(){
+    set_n_units_in_snd_lays = function(){
       result <- matrix(rep(private$n_units_in_lays,
                  length(private$n_units_in_lays)
         ), ncol = length(private$n_units_in_lays), byrow = T
       )
       result <- result * private$cxn_greater_zero
-      private$n_units_in_rcv_lays <- result
+      private$n_units_in_snd_lays <- result
     },
 
-    set_n_units_in_send_lays = function(){
+    set_n_units_in_rcv_lays = function(){
       result <- matrix(rep(private$n_units_in_lays,
                            length(private$n_units_in_lays)),
            ncol = length(private$n_units_in_lays))
       result <- result * private$cxn_greater_zero
-      private$n_units_in_send_lays <- result
+      private$n_units_in_rcv_lays <- result
     },
 
     set_all_w_vars = function(){
       private$w_init_empty = matrix(sapply(private$w_init, isempty),
                                     nrow = nrow(private$w_init))
-      private$w_index_low <- plyr::aaply(private$n_units_in_rcv_lays, 1,
+      private$w_index_low <- plyr::aaply(private$n_units_in_snd_lays, 1,
                                          function(x) head(c(1, cumsum(x) + 1),
                                                           -1))
-      private$w_index_up <- plyr::aaply(private$n_units_in_rcv_lays, 1,
+      private$w_index_up <- plyr::aaply(private$n_units_in_snd_lays, 1,
                                         function(x) cumsum(x))
     },
 
@@ -762,8 +762,8 @@ network <-  R6::R6Class("network",
       w_dim_lay_dim <- mapply(
         private$one_layer_dim_corresponds_with_weight_matrix_dim,
         private$w_init,
-        private$n_units_in_send_lays,
-        private$n_units_in_rcv_lays)
+        private$n_units_in_rcv_lays,
+        private$n_units_in_snd_lays)
       w_dim_lay_dim <- matrix(w_dim_lay_dim, nrow = nrow(private$w_init))
 
       if (sum(w_dim_lay_dim) < length(w_dim_lay_dim))
@@ -969,8 +969,8 @@ network <-  R6::R6Class("network",
     n_units_in_lays = NULL,
 
     # constants
-    avg_l_lrn_max = 0.01, # max amount of "BCM" learning in XCAL
-    avg_l_lrn_min = 0.0, # min amount of "BCM" learning in XCAL
+    avg_l_lrn_max = 0.5, # max amount of "BCM" learning in XCAL
+    avg_l_lrn_min = 0.0001, # min amount of "BCM" learning in XCAL
     m_in_s = 0.1, # proportion of medium to short term avgs. in XCAL
     m_lrn = 1, # proportion of error-driven learning in XCAL
     d_thr = 0.0001, # threshold for XCAL "check mark" function
@@ -983,8 +983,8 @@ network <-  R6::R6Class("network",
     #dependent
     #m1 = NULL, # the slope in the left part of XCAL's "check mark"
     cxn_greater_zero = matrix(), # binary version of cxn
-    n_units_in_rcv_lays = matrix(), # number of units of receiving layer in cxn matrix
-    n_units_in_send_lays = matrix(), # number of units of sending layer in cxn matrix
+    n_units_in_snd_lays = matrix(), # number of units of receiving layer in cxn matrix
+    n_units_in_rcv_lays = matrix(), # number of units of sending layer in cxn matrix
     w_index_low = matrix(), # lower index to extract weights from layer matrix
     # in cxn format
     w_index_up = matrix(), # upper index to extract weights from layer matrix in
