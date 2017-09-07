@@ -78,8 +78,9 @@ NULL
 #'   has already been scaled by a reciprocal function of the number of active
 #'   units (\code{recip_avg_act_n}) of the sending layer and by the connection
 #'   strength between the receiving and sending layer. The weight matrix
-#'   \code{ce_weights} is multiplied with this input vector to get the excitatory
-#'   conductance for each unit in the layer.
+#'
+#'   \code{ce_weights} is multiplied with this input vector to get the
+#'   excitatory conductance for each unit in the layer.
 #'
 #'     \code{ext_input} Vector with inputs not coming from another layer, with
 #'   length equalling the number of units in this layer. If empty (\code{NULL}),
@@ -102,7 +103,7 @@ NULL
 #' \code{updt_unit_avg_l}). These averages are used by the network class to
 #' calculate weight changes.}
 #'
-#'   \item{\code{updt_unit_avg_l()}}{Updates the long-term average (avg_l) of all
+#' \item{\code{updt_unit_avg_l()}}{Updates the long-term average (avg_l) of all
 #' units in the layer, usually done after a plus phase.}
 #'
 #'   \item{\code{updt_recip_avg_act_n()}}{Updates the \code{avg_act_inert} and
@@ -125,7 +126,7 @@ NULL
 #'   happens in units of a layer, which would otherwise not be possible, because
 #'   most of the variables (fields) are private in the unit class.}
 #'
-#'   \item{\code{get_layer_vars(show_dynamics = T, show_constants = F)}}{Returns a
+#' \item{\code{get_layer_vars(show_dynamics = T, show_constants = F)}}{Returns a
 #' data frame with 1 row with the current state of the variables in the layer.
 #' You can choose whether you want dynamic values and / or constant values. This
 #' might be useful if you want to analyse what happens in a layer, which would
@@ -276,7 +277,8 @@ layer <- R6::R6Class("layer",
     # An n x i weights matrix, where the n-th row has the
     # current weights values for all inputs coming to the n-th unit
     weights = NULL,
-    ce_weights = NULL,      # contrast-enhanced version of weights. ce_weights = SIG(weights).
+    # contrast-enhanced version of weights. ce_weights = SIG(weights).
+    ce_weights = NULL,
     units = NULL,      # a list with all the unit objects of the layer
     layer_number = 1   # number of layer in the network
   ),

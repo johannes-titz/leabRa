@@ -345,11 +345,11 @@ network <-  R6::R6Class("network",
     },
 
     set_weights = function(weights){
-      # This function receives a cell array weights, which is like the cell array
-      # w_init in the constructor: weights{i,j} is the weight matrix with the initial
-      # weights for the cxn from layer j to layer i. The weights are set to the
-      # values of weights. This whole function is a slightly modified copypasta of the
-      # constructor.
+      # This function receives a cell array weights, which is like the cell
+      # array w_init in the constructor: weights{i,j} is the weight matrix with
+      # the initial weights for the cxn from layer j to layer i. The weights are
+      # set to the values of weights. This whole function is a slightly modified
+      # copypasta of the constructor.
 
       private$w_init <- weights
 
@@ -676,7 +676,9 @@ network <-  R6::R6Class("network",
     create_lays = function(){
       self$layers <- mapply(function(x, y) layer$new(x, y), private$dim_lays,
                           private$g_i_gain)
-      Map(function(x, y) x$layer_number <- y, self$layers, 1:length(self$layers))
+      Map(function(x, y) x$layer_number <- y,
+          self$layers,
+          1:length(self$layers))
     },
 
     # there are a couple of variables that count how many units are in the
@@ -970,13 +972,16 @@ network <-  R6::R6Class("network",
     m_lrn = 1, # proportion of error-driven learning in XCAL
     d_thr = 0.0001, # threshold for XCAL "check mark" function
     d_rev = 0.1, # reversal value for XCAL "check mark" function
-    g_i_gain = 2, # g_i_gain for layers, to control overall inhibition in a specific layer
+    # g_i_gain for layers, to control overall inhibition in a specific layer
+    g_i_gain = 2,
     avg_l_lrn = list(),
     #dependent
     #m1 = NULL, # the slope in the left part of XCAL's "check mark"
     cxn_greater_zero = matrix(), # binary version of cxn
-    n_units_in_snd_lays = matrix(), # number of units of receiving layer in cxn matrix
-    n_units_in_rcv_lays = matrix(), # number of units of sending layer in cxn matrix
+    # number of units of receiving layer in cxn matrix
+    n_units_in_snd_lays = matrix(),
+    # number of units of sending layer in cxn matrix
+    n_units_in_rcv_lays = matrix(),
     w_index_low = matrix(), # lower index to extract weights from layer matrix
     # in cxn format
     w_index_up = matrix(), # upper index to extract weights from layer matrix in
