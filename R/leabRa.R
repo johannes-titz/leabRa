@@ -1,3 +1,6 @@
+#' @include network.R
+NULL
+
 #' leabRa: A package for biologically realistic neural networks based on leabra
 #'
 #' The leabRa package provides three classes to construct artifical neural

@@ -249,8 +249,8 @@ unit <- R6::R6Class("unit",
     nxx1 = function(x){
       # nxx1_df is a df that is used as a lookup-table, it is stored internally
       # but you can generate the data with the create_nxx1 function
-      closest_value <- which(abs(private$nxx1_df$nxx1_dom-x) ==
-                               min(abs(private$nxx1_df$nxx1_dom-x)))
+      closest_value <- which(abs(private$nxx1_df$nxx1_dom - x) ==
+                               min(abs(private$nxx1_df$nxx1_dom - x)))
       private$nxx1_df$nxoxp1[closest_value[1]]
 
       # if you want to use interpolation (but this is very slow)
@@ -278,7 +278,7 @@ unit <- R6::R6Class("unit",
     dom_g <- seq(-2 * mid, 2 * mid, length.out = 2 * n_x)
     values <- rep(0, n_x) # will be "nxoxp1"
     sd <- .005 # standard deviation of the Gaussian
-    gaussian <- exp(-(dom_g ^ 2) / (2 * sd ^ 2)) / (sd * sqrt(2 * pi))
+    gaussian <- exp(- (dom_g ^ 2) / (2 * sd ^ 2)) / (sd * sqrt(2 * pi))
 
     XX1 <- function(x, gain = 100){
       x[x <= 0] <- 0
@@ -343,7 +343,7 @@ unit <- R6::R6Class("unit",
   g_l = 0.1,            # leak conductance
   v_thr = 0.5,          # normalized "rate threshold", corresponds with -50mV
   spk_thr = 1.2,        # normalized spike threshold
-  v_reset= 0.3,         # reset membrane potential after spike
+  v_reset = 0.3,        # reset membrane potential after spike
   v_gain = 0.04,        # gain that voltage produces on adaptation
   spike_gain_adapt = 0.00805, # effect of spikes on adaptation
   nxx1_df = NULL        # this is the nxx1 activation function as a data frame

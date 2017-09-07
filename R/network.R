@@ -59,6 +59,7 @@ NULL
 #' # each trial for the wohle network; this might take a while depending on your
 #' # system
 #' n_epochs <- 10
+#' \donttest{
 #' output <- lapply(seq(n_epochs),
 #'                  function(x) net$learn_error_driven(inputs_minus,
 #'                                                     inputs,
@@ -68,7 +69,7 @@ NULL
 #' # deviation for each epoch; we are interested in layer 3
 #' mad <- net$mad_per_epoch(output, inputs, 3)
 #' # the error should decrease with increasing epoch number
-#' plot(mad)
+#' plot(mad)}
 #'
 #' @field layers A list of \code{\link{layer}} objects.
 #' @field lrate Learning rate, gain factor for how much the connection weights
@@ -253,10 +254,10 @@ network <-  R6::R6Class("network",
 
       private$set_all_w_vars()
 
-      private$test_argument_dimensions()
+      private$test_argument_dims()
 
 
-      private$second_test_argument_dimensions()
+      private$second_test_argument_dims()
 
       private$create_wt_for_lays()
       invisible(self)
@@ -266,14 +267,14 @@ network <-  R6::R6Class("network",
       private$ext_inputs <- lapply(ext_inputs, c)
       private$is_ext_inputs_valid()
       private$has_layer_ext_input <- !sapply(private$ext_inputs, is.null)
-      lay_has_no_ext_input_or_is_unclamped <-
+      lay_no_ext_input_or_unclamped <-
         !private$has_layer_ext_input | !clamp_inp
 
       if (clamp_inp == T) private$clamp_ext_inputs()
 
       intern_inputs <- private$find_intern_inputs()
       private$cycle_with_unclamped_lays(intern_inputs, ext_inputs,
-                                        lay_has_no_ext_input_or_is_unclamped)
+                                        lay_no_ext_input_or_unclamped)
       invisible(self)
     },
 
@@ -314,7 +315,7 @@ network <-  R6::R6Class("network",
                                                               ncol = y),
                                 avg_l_lrn_rcv,
                                 private$n_units_in_snd_lays)
-      # weights changes
+      # weights changing
       dwt_m <- private$m_mapply(function(x, y) private$get_dwt(x, y),
                                 s_hebb,
                                 m_hebb)
@@ -360,10 +361,10 @@ network <-  R6::R6Class("network",
       w_empty <- matrix(sapply(weights, isempty), nrow = nrow(weights))
 
       private$is_dim_w_init_equal_to_dim_cxn(weights)
-      private$connected_lays_have_weight_matrix()
-      private$non_connected_lays_do_not_have_weight_matrix()
+      private$con_lays_have_wt()
+      private$uncon_lays_have_no_wt()
 
-      private$all_layer_dims_correspond_width_weight_matrix_dims()
+      private$lay_dims_corresp_wt_dims()
 
       ## Now we set the weights
       # first find how many units project to the layer in all the network
@@ -443,7 +444,7 @@ network <-  R6::R6Class("network",
 
     learn_self_organized = function(inputs, lrate = 0.1,
                                     n_cycles = 50, show_progress = F){
-      outs <- mapply(private$learn_one_pattern_self_organized,
+      outs <- mapply(private$lrn_one_ptrn_self_org,
                      inputs,
                      pattern_number = seq(length(inputs)),
                      MoreArgs = list(n_cycles_minus = n_cycles,
@@ -483,7 +484,7 @@ network <-  R6::R6Class("network",
     run_trial = function(input, n_cycles, lrate = 0.1, reset = F){
       self$lrate <- lrate
       if (reset == T) self$reset()
-      for(i in seq(n_cycles)) self$cycle(input, clamp_inp = T)
+      for (i in seq(n_cycles)) self$cycle(input, clamp_inp = T)
       invisible(self)
     },
 
@@ -539,10 +540,10 @@ network <-  R6::R6Class("network",
       return(output)
     },
 
-    # learn_one_pattern_self_organized
+    # lrn_one_ptrn_self_org
     #
     # same as above, bu for self organized learning (without plus phase)
-    learn_one_pattern_self_organized = function(input_minus, pattern_number,
+    lrn_one_ptrn_self_org = function(input_minus, pattern_number,
                                               number_of_patterns,
                                               n_cycles_minus = 50,
                                               lrate = 0.1,
@@ -571,7 +572,6 @@ network <-  R6::R6Class("network",
     # functions to create random inputs-----------------------------------------
     create_one_input = function(dim_lays, which_layers, prop_active = 0.3){
       prob <- c(prop_active, 1 - prop_active)
-      #n_units <- lapply(dim_lays, function(x) x[1] * x[2])
       inputs <- mapply(private$create_one_input_for_one_layer,
                        private$n_units_in_lays,
                        private$inv_which(which_layers, private$n_lays),
@@ -608,7 +608,7 @@ network <-  R6::R6Class("network",
     },
 
     # first argument test in constructor ---------------------------------------
-    test_argument_dimensions = function(){
+    test_argument_dims = function(){
       private$has_every_layer_g_i_gain()
       private$is_cxn_quadratic()
       private$is_nrow_cxn_equal_to_n_lays()
@@ -651,9 +651,9 @@ network <-  R6::R6Class("network",
     is_dim_w_init_equal_to_dim_cxn = function(){
       if (sum(dim(private$w_init) == dim(private$cxn)) < 2){
         error <- paste("Cannot create network. You have an initial matrix of
-                       weight matrices with dimensions of ",
+                       weight matrices with dims of ",
                        paste(dim(private$w_init), collapse = ", "), ", and a
-                       connection matrix with dimensions of ",
+                       connection matrix with dims of ",
                        paste(dim(private$cxn), collapse = ", "), ". They have to
                        be identical.", sep = "")
         stop(error)
@@ -673,8 +673,8 @@ network <-  R6::R6Class("network",
     # layer has a sum of strengths from all other layers of 1, if there are any
     # connections at all.
     normalize_cxn = function(){
-      private$cxn <- plyr::aaply(private$cxn,1,
-                                 function(x) if(sum(x) > 0) x / sum(x) else x)
+      private$cxn <- plyr::aaply(private$cxn, 1,
+                                 function(x) if (sum(x) > 0) x / sum(x) else x)
     },
 
     create_lays = function(){
@@ -712,7 +712,7 @@ network <-  R6::R6Class("network",
     },
 
     set_all_w_vars = function(){
-      private$w_init_empty = matrix(sapply(private$w_init, isempty),
+      private$w_init_empty <- matrix(sapply(private$w_init, isempty),
                                     nrow = nrow(private$w_init))
       private$w_index_low <- plyr::aaply(private$n_units_in_snd_lays, 1,
                                          function(x) head(c(1, cumsum(x) + 1),
@@ -723,7 +723,7 @@ network <-  R6::R6Class("network",
 
     create_wt_for_lays = function(){
       wts <- apply(private$w_init, 1, function(x) Reduce("cbind", x))
-      Map(function(x, y) if(!isempty(y)) x$weights <- y, self$layers, wts)
+      Map(function(x, y) if (!isempty(y)) x$weights <- y, self$layers, wts)
       lapply(self$layers, function(x) x$set_ce_weights())
     },
 
@@ -734,13 +734,13 @@ network <-  R6::R6Class("network",
             function(x) paste("[", paste(x, collapse = ", "), "] ", sep = ""))
     },
 
-    second_test_argument_dimensions = function(){
-      private$connected_lays_have_weigth_matrix()
-      private$non_connected_lays_do_not_have_weight_matrix()
-      private$all_layer_dims_correspond_with_weight_matrix_dims()
+    second_test_argument_dims = function(){
+      private$con_lays_have_wt()
+      private$uncon_lays_have_no_wt()
+      private$lay_dims_corresp_wt_dims()
     },
 
-    connected_lays_have_weigth_matrix = function(){
+    con_lays_have_wt = function(){
       cxn_no_w <- private$cxn > 0 & private$w_init_empty
       if (sum(cxn_no_w) > 0) {
         stop(paste("Connected layers have no weight matrix. Check thefollowing
@@ -750,7 +750,7 @@ network <-  R6::R6Class("network",
       }
     },
 
-    non_connected_lays_do_not_have_weight_matrix = function(){
+    uncon_lays_have_no_wt = function(){
       w_no_cxn <- private$cxn == 0 & !private$w_init_empty
       if (sum(w_no_cxn) > 0) {
         stop(paste("Non-Connected layers have weight matrix. Check the following
@@ -760,23 +760,23 @@ network <-  R6::R6Class("network",
       }
     },
 
-    all_layer_dims_correspond_with_weight_matrix_dims = function(){
+    lay_dims_corresp_wt_dims = function(){
       w_dim_lay_dim <- mapply(
-        private$one_layer_dim_corresponds_with_weight_matrix_dim,
+        private$one_l_dim_corr_wt_dim,
         private$w_init,
         private$n_units_in_rcv_lays,
         private$n_units_in_snd_lays)
       w_dim_lay_dim <- matrix(w_dim_lay_dim, nrow = nrow(private$w_init))
 
       if (sum(w_dim_lay_dim) < length(w_dim_lay_dim))
-        stop(paste("Dimensions of weights and layers are inconsistent. Check the
+        stop(paste("dims of weights and layers are inconsistent. Check the
                    following row(s) and column(s) ([row, column]) in inital
                    weight matrix and number of units in the corresponding
                    layers.", "\n"), private$matrix_to_character(w_dim_lay_dim))
     },
 
-    one_layer_dim_corresponds_with_weight_matrix_dim =
-      function(w_init,lay_n_rcv, lay_n_send){
+    one_l_dim_corr_wt_dim =
+      function(w_init, lay_n_rcv, lay_n_send){
         if (isempty(w_init) & lay_n_rcv == 0 & lay_n_send == 0){
           return(T)
         }
@@ -786,7 +786,7 @@ network <-  R6::R6Class("network",
     # cycle subfunctions -------------------------------------------------------
     is_ext_inputs_valid = function(){
       private$is_ext_inputs_a_list()
-      private$is_length_ext_inputs_equal_to_n_lays()
+      private$ext_inp_equal_n_lays()
     },
 
     is_ext_inputs_a_list = function(){
@@ -796,7 +796,7 @@ network <-  R6::R6Class("network",
       }
     },
 
-    is_length_ext_inputs_equal_to_n_lays = function(){
+    ext_inp_equal_n_lays = function(){
       if (length(private$ext_inputs) != private$n_lays){
         stop(paste("Number of layers inconsistent with number of inputs in
                    network cycle. If a layer should not have an input, just use
@@ -902,10 +902,10 @@ network <-  R6::R6Class("network",
     },
 
     set_new_exp_bounded_wts = function(dwt_list){
-      mapply(private$set_new_exp_bounded_wts_for_one_lay, dwt_list, self$layers)
+      mapply(private$set_exp_bnd_wts_for_lay, dwt_list, self$layers)
     },
 
-    set_new_exp_bounded_wts_for_one_lay = function(dwt, lay){
+    set_exp_bnd_wts_for_lay = function(dwt, lay){
       if (!isempty(lay$weights)){
         lay$weights <- lay$weights + dwt * ifelse(dwt > 0,
                                                   1 - lay$weights,
@@ -958,7 +958,9 @@ network <-  R6::R6Class("network",
     mad_for_one_epoch = function(epoch_outs, epoch_inputs_plus, layer){
       outs_layer <- private$extract_list_number(epoch_outs, layer)
       inputs_plus_layer <- private$extract_list_number(epoch_inputs_plus, layer)
-      mean(unlist(Map(function(x, y) abs(x-y), outs_layer, inputs_plus_layer)),
+      mean(unlist(Map(function(x, y) abs(x - y),
+                      outs_layer,
+                      inputs_plus_layer)),
            na.rm = T)
     },
 
