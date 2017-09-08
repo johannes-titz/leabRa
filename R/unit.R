@@ -21,7 +21,7 @@ NULL
 #' print(u) # a lot of private values
 #' u$v # private values cannot be accessed
 #' # if you want to see alle variables, you need to use the function
-#' u$get_vars(show_dynamics = T, show_constants = T)
+#' u$get_vars(show_dynamics = TRUE, show_constants = TRUE)
 #'
 #' # let us clamp the activation to 0.7
 #' u$act

@@ -20,9 +20,9 @@ NULL
 #'
 #' l$g_e_avg # private values cannot be accessed
 #' # if you want to see alle variables, you need to use the function
-#' l$get_layer_vars(show_dynamics = T, show_constants = T)
+#' l$get_layer_vars(show_dynamics = TRUE, show_constants = TRUE)
 #' # if you want to see a summary of all units without constant values
-#' l$get_unit_vars(show_dynamics = T, show_constants = F)
+#' l$get_unit_vars(show_dynamics = TRUE, show_constants = FALSE)
 #'
 #' # let us clamp the activation of the 25 units to some random values between
 #' # 0.05 and 0.95

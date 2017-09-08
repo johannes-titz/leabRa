@@ -79,7 +79,7 @@ inputs_minus <- lapply(inputs_plus, function(x) {x[3] <- list(NULL); return(x)})
 Now we can start learning with default parameters. The return value of the learning function is the output activation after each trial. In the next step we will use this output to calculate the error. During learning, the progress is reported by dots that represent a single trial. This means that minus, plus phase and weight changing has been performed for one stimulus. Every row is a new epoch. Epoch is a term in leabra to describe that all stimuli were presented once.
 
 ```{r}
-n_epochs <- 10
+n_epochs <- 1
 outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
                                                                  inputs_plus,
                                                                  lrate = 0.5))
@@ -180,7 +180,7 @@ run_sim <- function(dim_lays, connections, inputs){
 Now we can run the simulation. 100 runs seems reasonable, because the network is tiny. This time we will turn of 
 
 ```{r}
-n_runs <- 100
+n_runs <- 2
 outs <- lapply(seq(n_runs), function(x) run_sim(dim_lays, connections, inputs))
 ```
 

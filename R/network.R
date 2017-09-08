@@ -32,15 +32,15 @@ NULL
 #' dim_lays <- list(c(2, 5), c(2, 10), c(2, 5))
 #' cxn <- matrix(c(0, 0, 0,
 #'                 1, 0, 0.2,
-#'                 0, 1, 0), nrow = 3, byrow = T)
+#'                 0, 1, 0), nrow = 3, byrow = TRUE)
 #' net <- network$new(dim_lays, cxn)
 #'
 #' net$m_in_s # private values cannot be accessed
 #' # if you want to see alle variables, you need to use the function
-#' net$get_network_vars(show_dynamics = T, show_constants = T)
+#' net$get_network_vars(show_dynamics = TRUE, show_constants = TRUE)
 #' # if you want to see a summary of all units (with layer information) without
 #' # constant values
-#' net$get_layer_and_unit_vars(show_dynamics = T, show_constants = F)
+#' net$get_layer_and_unit_vars(show_dynamics = TRUE, show_constants = FALSE)
 #'
 #' # let us create 10 random inputs for layer 1 and 3
 #' inputs <- net$create_inputs(c(1, 3), 10)
