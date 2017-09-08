@@ -3,7 +3,7 @@
 \docType{class}
 \name{unit}
 \alias{unit}
-\title{leabra unit (neuron) class}
+\title{Leabra unit (neuron) class}
 \format{\code{\link{R6Class}} object.}
 \usage{
 unit
@@ -97,5 +97,14 @@ plot(result$act, type = "b", xlab = "cycle", ylab = "act")
 # add conductance g_e to plot, should approach g_e_raw
 lines(result$g_e, type = "b", col = "blue")
 
+}
+\references{
+O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
+  Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
+  (partial) Edition. URL: \url{http://ccnbook.colorado.edu}
+
+Have also a look at
+  \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
+  link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
 }
 \keyword{data}

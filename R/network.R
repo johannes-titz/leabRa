@@ -1,7 +1,7 @@
 #' @include layer.R
 NULL
 
-#' leabra network class
+#' Leabra network class
 #'
 #' Class to simulate a biologically realistic network of neurons
 #' (\code{\link{unit}s}) organized in \code{\link{layer}s}
@@ -163,9 +163,9 @@ NULL
 #'     default is 50.
 #'
 #'     \code{n_cycles_plus} How many cycles to run in the plus phase,
-#'     default is 25.}
+#'     default is 25.
 #'
-#'     \code{show_progress} Whether progress of learning should be shown.
+#'     \code{show_progress} Whether progress of learning should be shown.}
 #'
 #'  \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles = 50,
 #'  show_progress = T)}}{Learns to categorize inputs in a self-organized
@@ -336,7 +336,7 @@ network <-  R6::R6Class("network",
       # replace empty cells with null, then use cbind to generate the dwt for
       # every layer in a list
       dwt_null <- apply(dwt, c(1, 2), function(x)
-        ifelse(isempty(x[[1]]), return(NULL), return(x[[1]])))
+        ifelse(private$isempty(x[[1]]), return(NULL), return(x[[1]])))
       dwt_list <- apply(dwt_null, 1, function(x) Reduce(cbind, x))
 
       private$set_new_exp_bounded_wts(dwt_list)
@@ -358,7 +358,7 @@ network <-  R6::R6Class("network",
 
       private$w_init <- weights
 
-      w_empty <- matrix(sapply(weights, isempty), nrow = nrow(weights))
+      w_empty <- matrix(sapply(weights, private$isempty), nrow = nrow(weights))
 
       private$is_dim_w_init_equal_to_dim_cxn(weights)
       private$con_lays_have_wt()
@@ -372,9 +372,9 @@ network <-  R6::R6Class("network",
 
       # make one weight matrix for every layer by collapsing receiving layer
       # weights columnwise, only do this for layers that receive something at
-      # all (isempty)
+      # all (private$isempty)
       wts <- apply(weights, 1, function(x) Reduce("cbind", x))
-      self$layers <- Map(function(x, y) {if (!isempty(y)) x$weights <- y; x},
+      self$layers <- Map(function(x, y) {if (!private$isempty(y)) x$weights <- y; x},
                        self$layers, wts)
 
       # set the contrast-enhanced version of the weights
@@ -409,9 +409,6 @@ network <-  R6::R6Class("network",
         data.frame(
           n_lays = private$n_lays,
           n_units_in_net = private$n_units_in_net,
-          avg_l_lrn_max = private$avg_l_lrn_max,
-          avg_l_lrn_min = private$avg_l_lrn_min,
-          m_in_s = private$m_in_s,
           m_lrn = private$m_lrn,
           d_thr = private$d_thr,
           d_rev = private$d_rev
@@ -712,7 +709,7 @@ network <-  R6::R6Class("network",
     },
 
     set_all_w_vars = function(){
-      private$w_init_empty <- matrix(sapply(private$w_init, isempty),
+      private$w_init_empty <- matrix(sapply(private$w_init, private$isempty),
                                     nrow = nrow(private$w_init))
       private$w_index_low <- plyr::aaply(private$n_units_in_snd_lays, 1,
                                          function(x) head(c(1, cumsum(x) + 1),
@@ -723,7 +720,7 @@ network <-  R6::R6Class("network",
 
     create_wt_for_lays = function(){
       wts <- apply(private$w_init, 1, function(x) Reduce("cbind", x))
-      Map(function(x, y) if (!isempty(y)) x$weights <- y, self$layers, wts)
+      Map(function(x, y) if (!private$isempty(y)) x$weights <- y, self$layers, wts)
       lapply(self$layers, function(x) x$set_ce_weights())
     },
 
@@ -777,7 +774,7 @@ network <-  R6::R6Class("network",
 
     one_l_dim_corr_wt_dim =
       function(w_init, lay_n_rcv, lay_n_send){
-        if (isempty(w_init) & lay_n_rcv == 0 & lay_n_send == 0){
+        if (private$isempty(w_init) & lay_n_rcv == 0 & lay_n_send == 0){
           return(T)
         }
         sum(dim(w_init) == c(lay_n_rcv, lay_n_send)) == 2
@@ -906,7 +903,7 @@ network <-  R6::R6Class("network",
     },
 
     set_exp_bnd_wts_for_lay = function(dwt, lay){
-      if (!isempty(lay$weights)){
+      if (!private$isempty(lay$weights)){
         lay$weights <- lay$weights + dwt * ifelse(dwt > 0,
                                                   1 - lay$weights,
                                                   lay$weights)
@@ -924,6 +921,15 @@ network <-  R6::R6Class("network",
     },
 
     # general functions --------------------------------------------------------
+
+    # isempty
+    #
+    # check whether object is empty by looking at the length
+    #
+    isempty = function(x){
+      length(x) == 0
+    },
+
     # mult_list_vec
     #
     # multiplies a list of vectors with constants from a vector with the length
@@ -973,8 +979,6 @@ network <-  R6::R6Class("network",
     n_units_in_lays = NULL,
 
     # constants
-    avg_l_lrn_max = 0.5, # max amount of "BCM" learning in XCAL
-    avg_l_lrn_min = 0.0001, # min amount of "BCM" learning in XCAL
     m_lrn = 1, # proportion of error-driven learning in XCAL
     d_thr = 0.0001, # threshold for XCAL "check mark" function
     d_rev = 0.1, # reversal value for XCAL "check mark" function

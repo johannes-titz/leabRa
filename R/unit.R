@@ -1,11 +1,19 @@
 #' @include misc.R
 NULL
 
-#' leabra unit (neuron) class
+#' Leabra unit (neuron) class
 #'
 #' This class simulates a biologically realistic neuron in the lebra framework.
 #' When you use the layer class, you will see that a \link{layer} object has a
 #' variable (field) \code{units}, which is a list of unit objects.
+#'
+#' @references O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
+#'   Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
+#'   (partial) Edition. URL: \url{http://ccnbook.colorado.edu}
+#'
+#' @references Have also a look at
+#'   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
+#'   link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
 #'
 #' @docType class
 #' @importFrom R6 R6Class

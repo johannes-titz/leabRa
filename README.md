@@ -7,45 +7,24 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Changes in emergent since matlab-version (April 2015)
-
-This is the comparison between the current version (as of 2017-09-07) and a version of Feb 2015 (the last one before April 2015, the matlab version release)
-https://grey.colorado.edu/emergent/index.php?title=Leabra&type=revision&diff=13089&oldid=11046
-
-I will only look at the critical parts:
-
-I_net is reset when spiking, this is a minor thing and will not change anything I suppose, because i_net is calculated without the previous i_net value. I have adopted it anyway.
-
-Weight updating seems to be like in matlab, although the docu is now more detailed. All other things seem to be optional.
-
-The major changes will be described in the following sections:
-
-## I_net_r 
-
-I_net_r = net \* (e_rev.e - v_m_eq) + gc_l \* (e_rev.l - v_m_eq) + gc_i \* (e_rev.i - v_m_eq) + noise
-
-rate-coded version of I_net, to provide adequate coupling with v_m_eq. 
-
-v_m_eq +=  dt.integ \* dt.vm_dt \* (I_net_r - adapt)
-
-In matlab version it is v_h (half step) instead of v_eq.
-
-I now use this version and it seems to be almost identical to the matlab one.
-
-## avg_l
-avg_l is updated differently now, but it was already different in the matlab version anyway. Now, there is no max value for avg_l, only a gain factor, that is multiplied with avg_m to update avg_l. avg_l_prc is not needed anymore, it seems.
-
-avg_l_prc is also used in layer, but we can simply use avg_l instead. 
-
-So I just made the switch and it looks ok so far.
-
-## avg_l_lrn
-avg_l_lrn also depends on cosine between minus and plus, which i do not really like. We can use 0.0004 instead, but only for hidden layers; output layers do not need hebbian learning (see lebra docu in ccnbook). Add type of layer someday.
-
-## momentum
-I will not include momentum, because in my opinion it violates the "local" approach of leabra. Although there might be some biologically plausible implementations of it.
-
 # todos
+
+eventuell docu mit describe machen für die parameter.
+
+https://cran.r-project.org/web/packages/URL_checks.html
+
+maybe skip creating vignette...critical parts take some time, its a simulation!
+
+test building on windows
+
+check examples and time for running them (devtools?, see karl broman)
+
+The ownership of copyright and intellectual property rights of all components of the package must be clear and unambiguous (including from the authors specification in the DESCRIPTION file). Where code is copied (or derived) from the work of others (including from R itself), care must be taken that any copyright/license statements are preserved and authorship is not misrepresented.
+Preferably, an ‘Authors@R’ would be used with ‘ctb’ roles for the authors of such code. Alternatively, the ‘Author’ field should list these authors as contributors.
+
+Where copyrights are held by an entity other than the package authors, this should preferably be indicated via ‘cph’ roles in the ‘Authors@R’ field, or using a ‘Copyright’ field (if necessary referring to an inst/COPYRIGHTS file).
+
+Trademarks must be respected.
 
 1. add type of layer for avg_l_lrn, it is 0.0004 on default, but 0 for output layers (they do not need self-organized learning).
 
@@ -128,7 +107,46 @@ in the book the gain is negative and the fraction is turned around:
 1 / (1 + (self$weights) / (off * (1 - self$weights)) ^ -gain)
 ```
 
-## Simulation stuff
+
+# Changes in emergent since matlab-version (April 2015)
+
+This is the comparison between the current version (as of 2017-09-07) and a version of Feb 2015 (the last one before April 2015, the matlab version release)
+https://grey.colorado.edu/emergent/index.php?title=Leabra&type=revision&diff=13089&oldid=11046
+
+I will only look at the critical parts:
+
+I_net is reset when spiking, this is a minor thing and will not change anything I suppose, because i_net is calculated without the previous i_net value. I have adopted it anyway.
+
+Weight updating seems to be like in matlab, although the docu is now more detailed. All other things seem to be optional.
+
+The major changes will be described in the following sections:
+
+## I_net_r 
+
+I_net_r = net \* (e_rev.e - v_m_eq) + gc_l \* (e_rev.l - v_m_eq) + gc_i \* (e_rev.i - v_m_eq) + noise
+
+rate-coded version of I_net, to provide adequate coupling with v_m_eq. 
+
+v_m_eq +=  dt.integ \* dt.vm_dt \* (I_net_r - adapt)
+
+In matlab version it is v_h (half step) instead of v_eq.
+
+I now use this version and it seems to be almost identical to the matlab one.
+
+## avg_l
+avg_l is updated differently now, but it was already different in the matlab version anyway. Now, there is no max value for avg_l, only a gain factor, that is multiplied with avg_m to update avg_l. avg_l_prc is not needed anymore, it seems.
+
+avg_l_prc is also used in layer, but we can simply use avg_l instead. 
+
+So I just made the switch and it looks ok so far.
+
+## avg_l_lrn
+avg_l_lrn also depends on cosine between minus and plus, which i do not really like. We can use 0.0004 instead, but only for hidden layers; output layers do not need hebbian learning (see lebra docu in ccnbook). Add type of layer someday.
+
+## momentum
+I will not include momentum, because in my opinion it violates the "local" approach of leabra. Although there might be some biologically plausible implementations of it.
+
+# Simulation stuff
 
 ### input
 We will need a function that generates the input, checkout the pass-t repo

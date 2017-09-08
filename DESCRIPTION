@@ -2,12 +2,14 @@ Package: leabRa
 Type: Package
 Title: Implementation of the artifical neural networks algorithm Leabra
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Author: Johannes Titz
+Maintainer: Johannes Titz <johannes.titz@gmail.com>
 Description: This is a port of Leabra (local error driven and associative 
     biologically realistic algorithm) for R. You can construct
     artifical neural networks that are biologically realistic and can let them 
-    learn supervised or unsupervised within one single framework.
+    learn supervised or unsupervised within one single framework. For more 
+    general (not R specific) information on the algorithm Leabra see 
+    https://grey.colorado.edu/emergent/index.php/Leabra.
 Depends: R (>= 2.10)
 License: GPL-3
 Encoding: UTF-8

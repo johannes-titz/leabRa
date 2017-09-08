@@ -1,11 +1,19 @@
 #' @include unit.R
 NULL
 
-#' leabra layer class
+#' Leabra layer class
 #'
 #' This class simulates a biologically realistic layer of neurons in the lebra
 #' framework. It consists of several \code{\link{unit}} objects in the variable
 #' (field) \code{units} and some layer-specific variables.
+#'
+#' @references O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
+#'   Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
+#'   (partial) Edition. URL: \url{http://ccnbook.colorado.edu}
+#'
+#' @references Have also a look at
+#'   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
+#'   link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
 #'
 #' @docType class
 #' @importFrom R6 R6Class
@@ -48,7 +56,7 @@ NULL
 #'   weights will be set by the \code{\link{network}} object, because they
 #'   depend on the connection to other layers.
 #' @field ce_weights Sigmoidal contrast-enhanced version of the weight matrix
-#'   \code{weights}. These weights will also be set by the \code{\link{network}}
+#'   \code{weights}. These weights will be set by the \code{\link{network}}
 #'   object.
 #' @field layer_number Layer number in network (this is 1 if you create
 #' a layer on your own, without the network class).
@@ -172,7 +180,7 @@ layer <- R6::R6Class("layer",
       # obtaining the excitatory conductance because of input
       # contrast enhanced weights are used
       g_e_per_unit <- self$ce_weights %*% intern_input
-      if (!isempty(ext_input)) g_e_per_unit <- g_e_per_unit + ext_input
+      if (!private$isempty(ext_input)) g_e_per_unit <- g_e_per_unit + ext_input
 
       # obtaining inhibitory conductance
       private$g_e_avg <- mean(g_e_per_unit)
@@ -285,6 +293,13 @@ layer <- R6::R6Class("layer",
 
   # private --------------------------------------------------------------------
   private = list(
+    # isempty
+    #
+    # check whether object is empty by looking at the length
+    #
+    isempty = function(x){
+      length(x) == 0
+    },
     # fields -------------------------------------------------------------------
     # dynamic ------------------------------------------------------------------
 

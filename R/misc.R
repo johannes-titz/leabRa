@@ -20,7 +20,3 @@
 
   invisible()
 }
-
-isempty <- function(x){
-  length(x) == 0
-}

@@ -3,7 +3,7 @@
 \docType{class}
 \name{layer}
 \alias{layer}
-\title{leabra layer class}
+\title{Leabra layer class}
 \format{\code{\link{R6Class}} object}
 \usage{
 layer
@@ -146,5 +146,14 @@ activations
 # should be smaller
 l$get_unit_scaled_acts()
 
+}
+\references{
+O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
+  Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
+  (partial) Edition. URL: \url{http://ccnbook.colorado.edu}
+
+Have also a look at
+  \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
+  link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
 }
 \keyword{data}

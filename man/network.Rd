@@ -3,7 +3,7 @@
 \docType{class}
 \name{network}
 \alias{network}
-\title{leabra network class}
+\title{Leabra network class}
 \format{\code{\link{R6Class}} object.}
 \usage{
 network
