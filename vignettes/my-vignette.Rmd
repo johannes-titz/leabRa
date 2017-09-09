@@ -169,7 +169,7 @@ connections <- matrix(c(0, 0,
 ### Learning
 We want to run the simulation not just once, but several times. To achieve this we can write a short function that initializes the network and then learns self-organized. The network will be different every time, because the weights are initialized randomly. You can think of this procedure as if you would let 100 participants observe ten different animals. The difference in participants is mimicked in the different weight matrices for every network.
 
-```{r, message=FALSE}
+```{r}
 run_sim <- function(dim_lays, connections, inputs){
   net <- network$new(dim_lays, connections)
   net$learn_self_organized(inputs)
@@ -178,8 +178,8 @@ run_sim <- function(dim_lays, connections, inputs){
 
 Now we can run the simulation. 100 runs seems reasonable, because the network is tiny. In the vignette the messages for the next code chunk were turned off to not clutter this document with the progress message.
 
-```{r}
-n_runs <- 100
+```{r, message=FALSE}
+n_runs <- 20
 outs <- lapply(seq(n_runs), function(x) run_sim(dim_lays, connections, inputs))
 ```
 
@@ -189,12 +189,13 @@ The output is the activations of each layer after every stimulus presentation. W
 ```{r}
 outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
 outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
+outs_layer_two <- lapply(outs_layer_two, round, 2)
 ```
 
 Certainly, there are many ways to work with these activations. The first step will likely be to look at the distance matrices for every simulation run:
 
 ```{r}
-dists <- lapply(outs_layer_two, dist)
+dists <- lapply(outs_layer_two, proxy::simil)
 round(dists[[1]], 2)
 ```
 
@@ -218,7 +219,49 @@ library(qgraph)
 qgraph(1 - mean_dists_mtrx, layout = "spring", vsize = 6)
 ```
 
-There seem to emerge three categories. One is dominated by the similarity between dog and cat (they have the same feature vectors), but bats and whales also belong there: the mammals. Then we have robin, canary and to a lesser degree ostrich: the birds. Finally, snake and lizzard, and to a lesser degree the alligator ("all", as of the abbreviation algorithm in qgraph): amphibians. As a side note: I am not a zoologist, but alligators are actually reptiles. This is reflected to some degree in the graph, because alligator is not as close to lizard and snake as they are to each other. Furthermore, whale, bat and ostrich are rather unusual for their category. Obviously, the example by Knight is somewhat artifical, but in this sense it also my favorite "hello world" example for *artifical* neural networks.
+There seem to emerge three categories. One is dominated by the similarity between dog and cat (they have the same feature vectors), but bats and whales also belong there: the mammals. Then we have robin, canary and to a lesser degree ostrich: the birds. Finally, snake and lizzard, and the alligator ("all", as of the abbreviation algorithm in qgraph): reptiles. Whale, bat and ostrich are rather unusual for their category, so they are bit further away from the other members. Obviously, the example by Knight is somewhat artifical, but in this sense it also my favorite "hello world" example for *artifical* neural networks.
+
+### Some Additional Notes
+I received a criticism that the network actually only represents the inputs in a slightly different way. There is still a lot of variation possible, because I analyze all 3 output units with the simil function and they can have values between 0 and 1. We can just plot the the graph on the inputs without learning to understand this criticism.
+
+```{r}
+dists2 <- proxy::simil(animals)
+qgraph(dists2,
+       layout = "spring",
+       vsize = 6)
+```
+
+You can already see that this still look somewhat different to the above version. But let us do it more thouroughly. We will take a binary approach, the network has to decide for one specific category with the help of two functions.
+
+```{r}
+set_won <- function(matrix){
+  t(apply(matrix, 1, function(x) {x[-which.max(x)] <- 0; x}))
+}
+
+set_won2 <- function(matrix){
+  t(apply(matrix, 1, function(x) {x[which.max(x)] <- 1; x}))
+}
+
+outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
+outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
+outs_layer_two <- lapply(outs_layer_two, set_won)
+outs_layer_two <- lapply(outs_layer_two, set_won2)
+
+``` 
+The rest stays the same:
+
+```{r}
+dists <- lapply(outs_layer_two, proxy::simil)
+round(dists[[1]], 2)
+
+mean_dists <- Reduce("+", dists) / length(dists)
+
+mean_dists_mtrx <- as.matrix(mean_dists)
+colnames(mean_dists_mtrx) <- rownames(animals)
+rownames(mean_dists_mtrx) <- rownames(animals)
+
+qgraph(mean_dists_mtrx, layout = "spring", vsize = 6)
+```
 
 ## Summary and Restrictions
 These examples show that leab*R*a seems to work fine for two typical use cases. Still, I cannot guarantee that the code is correct in every detail. Furthermore, there are some differences to the original C++ code. For instance, you cannot specify partial connections. Besides, the nxx1-function is a step-function to reduce calculation resources. Overall, the algorithm should still produce very similar results to the original Leabra implementation.
