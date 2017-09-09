@@ -8,6 +8,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # todos
+todo: which.max for outs_layer
+markus anmerkungen vignette
+
+das beispiel für self-organized ist vielleicht irreführend
+
+gain_e_lrn verursacht Inaktivitäten bei Werner...testen
+
+Sergio schreiben
 
 eventuell docu mit describe machen für die parameter.
 
