@@ -440,7 +440,7 @@ network <-  R6::R6Class("network",
     },
 
     learn_self_organized = function(inputs, lrate = 0.1,
-                                    n_cycles = 50, show_progress = F){
+                                    n_cycles = 50, show_progress = T){
       outs <- mapply(private$lrn_one_ptrn_self_org,
                      inputs,
                      pattern_number = seq(length(inputs)),
