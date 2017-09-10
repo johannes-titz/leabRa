@@ -1,5 +1,5 @@
 .onAttach <- function(libname, pkgname) {
-  packageStartupMessage("Welcome to LeabRa")
+  packageStartupMessage("Welcome to leabRa")
 }
 
 .onLoad <- function(libname, pkgname) {
