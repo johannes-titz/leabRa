@@ -79,10 +79,10 @@ inputs_minus <- lapply(inputs_plus, function(x) {x[3] <- list(NULL); return(x)})
 Now we can start learning with default parameters. The return value of the learning function is the output activation after each trial. In the next step we will use this output to calculate the error. During learning, the progress is reported by dots that represent a single trial. This means that minus, plus phase and weight changing has been performed for one stimulus. Every row is a new epoch. Epoch is a term in Leabra to describe that all stimuli were presented once.
 
 ```{r}
-n_epochs <- 10
+n_epochs <- 2
 outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
-                                                                 inputs_plus,
-                                                                 lrate = 0.5))
+                                                                 inputs_plus))#,
+                                                                 #lrate = 0.5))
 ```
 
 ### Plotting Results
@@ -167,12 +167,13 @@ connections <- matrix(c(0, 0,
 ```
 
 ### Learning
-We want to run the simulation not just once, but several times. To achieve this we can write a short function that initializes the network and then learns self-organized. The network will be different every time, because the weights are initialized randomly. You can think of this procedure as if you would let 100 participants observe ten different animals. The difference in participants is mimicked in the different weight matrices for every network.
+We want to run the simulation not just once, but several times. To achieve this we can write a short function that initializes the network and then learns self-organized. After learning we will test how it reacts to the inputs with the method *test_inputs*. The network will be different every time, because the weights are initialized randomly. You can think of this procedure as if you would let 100 participants observe ten different animals. The difference in participants is mimicked in the different weight matrices for every network.
 
 ```{r}
 run_sim <- function(dim_lays, connections, inputs){
   net <- network$new(dim_lays, connections)
   net$learn_self_organized(inputs)
+  net$test_inputs(inputs)
 }
 ```
 
@@ -190,48 +191,13 @@ The output is the activations of each layer after every stimulus presentation. W
 outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
 outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
 outs_layer_two <- lapply(outs_layer_two, round, 2)
+round(outs_layer_two[[1]], 2)
 ```
+One problem we can see here is that for some simulations only 2 output units are active, the third is never active. This happens because of hogging, a problem that often occurs in self organized learning. There are couple of ways to deal with this, but for our simple example we can ignore it, because we run several simulations, so it's not a biggy if a couple of them have hogging units.
 
-Certainly, there are many ways to work with these activations. The first step will likely be to look at the distance matrices for every simulation run:
+Certainly, there are many ways to work with these activations. For instance, we can calculate the distance (or similarity) between the ten animals in their output activation and then run a cluster analysis or draw a heatmap. But a critic might say, that this allows for too much degrees of freedom and will not be very different to the input patterns themselves. Thus, we can take a more rigorous cognitive approach: if asking a human about an animal, he or she will take a clear decision in which category to put the animal. Sometimes this can be a close decision, but this will be reflected by different simulation runs through random weights.
 
-```{r}
-dists <- lapply(outs_layer_two, proxy::simil)
-round(dists[[1]], 2)
-```
-
-This is 1 distance matrix, but we have 100 of them; this is just too much information. We can average these values over the simulation runs by using a cool functional again:
-
-```{r}
-mean_dists <- Reduce("+", dists) / length(dists)
-```
-
-Now, we need to add the column and row names from the original data set, so that we know which animal is in which row.
-```{r}
-mean_dists_mtrx <- as.matrix(mean_dists)
-colnames(mean_dists_mtrx) <- rownames(animals)
-rownames(mean_dists_mtrx) <- rownames(animals)
-```
-
-We could run a cluster analysis and then look at a dendrogramm to see the categories. A heatmap of the distance matrix is also an option. Here, I will just use a graph to plot the results. We will need to use 1 - dist, because qgraph takes similarity as the parameter and not the disimilarity (distance).
-
-```{r, fig.height=5, fig.width=5}
-library(qgraph)
-qgraph(1 - mean_dists_mtrx, layout = "spring", vsize = 6)
-```
-
-There seem to emerge three categories. One is dominated by the similarity between dog and cat (they have the same feature vectors), but bats and whales also belong there: the mammals. Then we have robin, canary and to a lesser degree ostrich: the birds. Finally, snake and lizzard, and the alligator ("all", as of the abbreviation algorithm in qgraph): reptiles. Whale, bat and ostrich are rather unusual for their category, so they are bit further away from the other members. Obviously, the example by Knight is somewhat artifical, but in this sense it also my favorite "hello world" example for *artifical* neural networks.
-
-### Some Additional Notes
-I received a criticism that the network actually only represents the inputs in a slightly different way. There is still a lot of variation possible, because I analyze all 3 output units with the simil function and they can have values between 0 and 1. We can just plot the the graph on the inputs without learning to understand this criticism.
-
-```{r}
-dists2 <- proxy::simil(animals)
-qgraph(dists2,
-       layout = "spring",
-       vsize = 6)
-```
-
-You can already see that this still look somewhat different to the above version. But let us do it more thouroughly. We will take a binary approach, the network has to decide for one specific category with the help of two functions.
+Let us transform the matrices to 1 and 0, the max value will get 1 and the other ones will get 0.
 
 ```{r}
 set_won <- function(matrix){
@@ -242,26 +208,53 @@ set_won2 <- function(matrix){
   t(apply(matrix, 1, function(x) {x[which.max(x)] <- 1; x}))
 }
 
-outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
-outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
-outs_layer_two <- lapply(outs_layer_two, set_won)
-outs_layer_two <- lapply(outs_layer_two, set_won2)
+#outs_layer_two <- lapply(outs_layer_two, set_won)
+#outs_layer_two <- lapply(outs_layer_two, set_won2)
+```
 
-``` 
-The rest stays the same:
+Now, if we calculate a (eucldian) distance matrix get 0 if two animals belong to the same category or sqrt(2) if they belong to different categories, which we can convert to 1. (This is just a shortcut; the longer approach would be to group the animals by their output unit and then just plot the most frequent categories.)
+
 
 ```{r}
-dists <- lapply(outs_layer_two, proxy::simil)
-round(dists[[1]], 2)
-
-mean_dists <- Reduce("+", dists) / length(dists)
-
-mean_dists_mtrx <- as.matrix(mean_dists)
-colnames(mean_dists_mtrx) <- rownames(animals)
-rownames(mean_dists_mtrx) <- rownames(animals)
-
-qgraph(mean_dists_mtrx, layout = "spring", vsize = 6)
+dists <- lapply(outs_layer_two,
+                function(x) cluster::daisy(x, warnType = F))
+#dists <- lapply(dists, function(x) {x[x != 0] <- 1; x})
+dists[[1]]
 ```
+
+This is 1 distance matrix, but we have 100 of them; this is just too much information. We can average these values over the simulation runs by using a cool functional again:
+
+```{r}
+dists_mtrx <- lapply(dists, as.matrix)
+mean_dists <- Reduce("+", dists_mtrx) / length(dists)
+```
+
+Now, we need to add the column and row names from the original data set, so that we know which animal is in which row.
+```{r}
+colnames(mean_dists) <- rownames(animals)
+rownames(mean_dists) <- rownames(animals)
+```
+
+Here, I will just use a graph to plot the results. We will need to use 1 - dist, because qgraph takes similarity as the parameter and not the disimilarity (distance).
+
+```{r, fig.height=5, fig.width=5}
+#library(qgraph)
+#qgraph(1 - mean_dists, layout = "spring", vsize = 6)
+plot(hclust(as.dist(mean_dists)))
+```
+
+There seem to emerge three categories. One is dominated by the similarity between dog and cat (they have the same feature vectors), but bats and whales also belong there: the mammals. Then we have robin, canary and to a lesser degree ostrich: the birds. Finally, snake and lizzard, and the alligator ("all", as of the abbreviation algorithm in qgraph): reptiles. Whale, bat and ostrich are rather unusual for their category, so they are bit further away from the other members. Obviously, the example by Knight is somewhat artifical, but in this sense it also my favorite "hello world" example for *artifical* neural networks.
+
+As a comparison we can also calculate the distance between the input patterns -- this is what a mathematical algorithm finds as a result compared to a neural network.
+
+```{r}
+#dists2 <- cluster::daisy(animals, "gower", type = list(symm = 1:6))
+#qgraph(1 - dists2,
+#       layout = "spring",
+#       vsize = 6)
+```
+
+#You can already see that this still look somewhat different to the above version.
 
 ## Summary and Restrictions
 These examples show that leab*R*a seems to work fine for two typical use cases. Still, I cannot guarantee that the code is correct in every detail. Furthermore, there are some differences to the original C++ code. For instance, you cannot specify partial connections. Besides, the nxx1-function is a step-function to reduce calculation resources. Overall, the algorithm should still produce very similar results to the original Leabra implementation.
