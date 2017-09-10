@@ -324,6 +324,7 @@ network <-  R6::R6Class("network",
                                 l_rcv)
 
       # multiply longerm average by individual unit scaling factor
+
       dwt_l <- private$m_mapply(function(x, y) x * y, dwt_l, avg_l_lrn_rcv)
 
       # multiply medium average by gain for medium (versus long)
@@ -452,6 +453,17 @@ network <-  R6::R6Class("network",
       return(outs)
     },
 
+    test_inputs = function(inputs, n_cycles = 50, show_progress = F){
+      outs <- mapply(private$test_one_input,
+                     inputs,
+                     pattern_number = seq(length(inputs)),
+                     MoreArgs = list(n_cycles_minus = n_cycles,
+                                     number_of_patterns = length(inputs),
+                                     show_progress = show_progress),
+                     SIMPLIFY = F)
+      return(outs)
+    },
+
     mad_per_epoch = function(outs_per_epoch, inputs_plus, layer){
       sapply(outs_per_epoch, private$mad_for_one_epoch, inputs_plus, layer)
     },
@@ -478,8 +490,7 @@ network <-  R6::R6Class("network",
     # if one wants random activations)
     #
     # returns invisible self
-    run_trial = function(input, n_cycles, lrate = 0.1, reset = F){
-      self$lrate <- lrate
+    run_trial = function(input, n_cycles, reset = F){
       if (reset == T) self$reset()
       for (i in seq(n_cycles)) self$cycle(input, clamp_inp = T)
       invisible(self)
@@ -515,14 +526,14 @@ network <-  R6::R6Class("network",
                                               reset = T,
                                               show_progress = T){
       # minus phase
-      private$run_trial(input_minus, n_cycles_minus, lrate = lrate,
-                        reset = reset)
+      private$run_trial(input_minus, n_cycles_minus, reset = reset)
 
       output <- lapply(self$layers, function(x) x$get_unit_acts())
 
       # plus phase, do not reset the network!
-      private$run_trial(input_plus, n_cycles_plus, lrate = lrate, reset = F)
+      private$run_trial(input_plus, n_cycles_plus, reset = F)
 
+      self$lrate <- lrate
       # change weights
       self$chg_wt()
 
@@ -547,13 +558,13 @@ network <-  R6::R6Class("network",
                                               reset = T,
                                               show_progress = T){
       # minus phase
-      private$run_trial(input_minus, n_cycles_minus, lrate = lrate,
-                        reset = reset)
+      private$run_trial(input_minus, n_cycles_minus, reset = reset)
 
       output <- lapply(self$layers, function(x) x$get_unit_acts())
 
+      self$lrate <- lrate
       # change weights
-      self$chg_wt(gain_e_lrn = 0)
+      self$chg_wt()
 
       # show progress
       if (show_progress == T){
@@ -566,6 +577,30 @@ network <-  R6::R6Class("network",
 
       return(output)
     },
+
+    # test_one_input
+    #
+    # present one pattern without learning (for testing)
+    test_one_input = function(input_minus, pattern_number, number_of_patterns,
+                              n_cycles_minus = 50,
+                              reset = T, show_progress = F){
+      # minus phase
+      private$run_trial(input_minus, n_cycles_minus, reset = reset)
+
+      output <- lapply(self$layers, function(x) x$get_unit_acts())
+
+      # show progress
+      if (show_progress == T){
+        if (pattern_number == number_of_patterns) {
+          cat(".\n")
+        } else {
+          cat(".")
+        }
+      }
+
+      return(output)
+    },
+
     # functions to create random inputs-----------------------------------------
     create_one_input = function(dim_lays, which_layers, prop_active = 0.3){
       prob <- c(prop_active, 1 - prop_active)
