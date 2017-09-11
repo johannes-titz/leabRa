@@ -371,7 +371,7 @@ network <-  R6::R6Class("network",
 
       w_empty <- matrix(sapply(weights, private$isempty), nrow = nrow(weights))
 
-      private$is_dim_w_init_equal_to_dim_cxn(weights)
+      private$is_dim_w_init_equal_to_dim_cxn()
       private$con_lays_have_wt()
       private$uncon_lays_have_no_wt()
 
@@ -383,10 +383,9 @@ network <-  R6::R6Class("network",
 
       # make one weight matrix for every layer by collapsing receiving layer
       # weights columnwise, only do this for layers that receive something at
-      # all (private$isempty)
+      # all, which is already handled by Reduce.
       wts <- apply(weights, 1, function(x) Reduce("cbind", x))
-      self$layers <- Map(function(x, y) {if (!private$isempty(y)) x$weights <- y; x},
-                       self$layers, wts)
+      Map(function(x, y) x$weights <- y, self$layers, wts)
 
       # set the contrast-enhanced version of the weights
       lapply(self$layers, function(x) x$set_ce_weights())
