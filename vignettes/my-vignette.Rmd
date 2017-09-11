@@ -167,25 +167,25 @@ connections <- matrix(c(0, 0,
 ```
 
 ### Learning
-We want to run the simulation not just once, but several times. To achieve this we can write a short function that initializes the network and then learns self-organized. After learning we will test how it reacts to the inputs with the method *test_inputs*. The network will be different every time, because the weights are initialized randomly. You can think of this procedure as if you would let 100 participants observe ten different animals. The difference in participants is mimicked in the different weight matrices for every network.
+We want to run the simulation not just once, but several times. To achieve this we can write a short function that initializes the network and then learns self-organized. After learning we will test how it reacts to the inputs with the method *test_inputs*. The network will be different every time, because the weights are initialized randomly. You can think of this procedure as if you would let 100 participants observe ten different animals. The difference in participants is mimicked in the different weight matrices for every network. Note that in the last line we test the inputs without learning. This is necessary, because we only run one epoch as compared to error-driven learning, where we simply received the activations just before learning.
 
 ```{r}
 run_sim <- function(dim_lays, connections, inputs){
   net <- network$new(dim_lays, connections)
-  net$learn_self_organized(inputs)
+  net$learn_self_organized(inputs, lrate = 0.8)
   net$test_inputs(inputs)
 }
 ```
 
-Now we can run the simulation. 100 runs seems reasonable, because the network is tiny. In the vignette the messages for the next code chunk were turned off to not clutter this document with the progress message.
+Now we can run the simulation. 10 runs should not be a problem, because the network is tiny. In the vignette the messages for the next code chunk were turned off to not clutter this document with the progress bar.
 
 ```{r, message=FALSE}
-n_runs <- 20
+n_runs <- 10
 outs <- lapply(seq(n_runs), function(x) run_sim(dim_lays, connections, inputs))
 ```
 
 ### Plotting Results
-The output is the activations of each layer after every stimulus presentation. We are actually only interested in layer 2, so let us extract these activations and transform them to data frames (some "wrangling" again).
+The output is the activations of each layer after all stimuli were presented. We are actually only interested in layer 2, so let us extract these activations and transform them to data frames (some "wrangling" again).
 
 ```{r}
 outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
@@ -193,36 +193,17 @@ outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
 outs_layer_two <- lapply(outs_layer_two, round, 2)
 round(outs_layer_two[[1]], 2)
 ```
-One problem we can see here is that for some simulations only 2 output units are active, the third is never active. This happens because of hogging, a problem that often occurs in self organized learning. There are couple of ways to deal with this, but for our simple example we can ignore it, because we run several simulations, so it's not a biggy if a couple of them have hogging units.
+One problem we can see here is that for some simulations only 2 output units are active, the third is never active. This happens because of hogging, a problem that often occurs in self organized learning. One output unit is just so storng, that it attracts everything; in this case two units are much stronger than the third. There are couple of ways to deal with this problem (see https://grey.colorado.edu/emergent/index.php/Leabra), but for our simple example we can ignore it, because we run several simulations, so it's not a biggy if a couple of them have hogging units.
 
-Certainly, there are many ways to work with these activations. For instance, we can calculate the distance (or similarity) between the ten animals in their output activation and then run a cluster analysis or draw a heatmap. But a critic might say, that this allows for too much degrees of freedom and will not be very different to the input patterns themselves. Thus, we can take a more rigorous cognitive approach: if asking a human about an animal, he or she will take a clear decision in which category to put the animal. Sometimes this can be a close decision, but this will be reflected by different simulation runs through random weights.
-
-Let us transform the matrices to 1 and 0, the max value will get 1 and the other ones will get 0.
+Certainly, there are many ways to work with these activations. For instance, we could make a forced-choice decision from these activations, by looking at the most active unit in the output layer. Hee, we will calculate the distance (or similarity) between the ten animals in their output activations and then run a cluster analysis.
 
 ```{r}
-set_won <- function(matrix){
-  t(apply(matrix, 1, function(x) {x[-which.max(x)] <- 0; x}))
-}
-
-set_won2 <- function(matrix){
-  t(apply(matrix, 1, function(x) {x[which.max(x)] <- 1; x}))
-}
-
-#outs_layer_two <- lapply(outs_layer_two, set_won)
-#outs_layer_two <- lapply(outs_layer_two, set_won2)
-```
-
-Now, if we calculate a (eucldian) distance matrix get 0 if two animals belong to the same category or sqrt(2) if they belong to different categories, which we can convert to 1. (This is just a shortcut; the longer approach would be to group the animals by their output unit and then just plot the most frequent categories.)
-
-
-```{r}
-dists <- lapply(outs_layer_two,
-                function(x) cluster::daisy(x, warnType = F))
+dists <- lapply(outs_layer_two, dist)
 #dists <- lapply(dists, function(x) {x[x != 0] <- 1; x})
 dists[[1]]
 ```
 
-This is 1 distance matrix, but we have 100 of them; this is just too much information. We can average these values over the simulation runs by using a cool functional again:
+This is 1 distance matrix, but we have 10 of them; this is just too much information. We can average these values over the simulation runs by using a cool functional again:
 
 ```{r}
 dists_mtrx <- lapply(dists, as.matrix)
@@ -235,26 +216,12 @@ colnames(mean_dists) <- rownames(animals)
 rownames(mean_dists) <- rownames(animals)
 ```
 
-Here, I will just use a graph to plot the results. We will need to use 1 - dist, because qgraph takes similarity as the parameter and not the disimilarity (distance).
-
+Now, we are finally ready to plot a dendrogramm after clustering:
 ```{r, fig.height=5, fig.width=5}
-#library(qgraph)
-#qgraph(1 - mean_dists, layout = "spring", vsize = 6)
 plot(hclust(as.dist(mean_dists)))
 ```
 
-There seem to emerge three categories. One is dominated by the similarity between dog and cat (they have the same feature vectors), but bats and whales also belong there: the mammals. Then we have robin, canary and to a lesser degree ostrich: the birds. Finally, snake and lizzard, and the alligator ("all", as of the abbreviation algorithm in qgraph): reptiles. Whale, bat and ostrich are rather unusual for their category, so they are bit further away from the other members. Obviously, the example by Knight is somewhat artifical, but in this sense it also my favorite "hello world" example for *artifical* neural networks.
-
-As a comparison we can also calculate the distance between the input patterns -- this is what a mathematical algorithm finds as a result compared to a neural network.
-
-```{r}
-#dists2 <- cluster::daisy(animals, "gower", type = list(symm = 1:6))
-#qgraph(1 - dists2,
-#       layout = "spring",
-#       vsize = 6)
-```
-
-#You can already see that this still look somewhat different to the above version.
+There seem to emerge three natural categories. One is dominated by the similarity between dog and cat (they have the same feature vectors), but bats and whales also belong there: the mammals. Then we have robin, canary and to a lesser degree ostrich: the birds. Finally, snake and lizzard, and the alligator: reptiles. Whale, bat and ostrich are rather unusual for their category, so they are bit further away from the other members. Obviously, the example by Knight is somewhat artifical, but in this sense it also my favorite "hello world" example for *artifical* neural networks.
 
 ## Summary and Restrictions
 These examples show that leab*R*a seems to work fine for two typical use cases. Still, I cannot guarantee that the code is correct in every detail. Furthermore, there are some differences to the original C++ code. For instance, you cannot specify partial connections. Besides, the nxx1-function is a step-function to reduce calculation resources. Overall, the algorithm should still produce very similar results to the original Leabra implementation.
