@@ -764,7 +764,9 @@ network <-  R6::R6Class("network",
 
     create_wt_for_lays = function(){
       wts <- apply(private$w_init, 1, function(x) Reduce("cbind", x))
-      Map(function(x, y) if (!private$isempty(y)) x$weights <- y, self$layers, wts)
+      Map(function(x, y) if (!private$isempty(y)) x$weights <- y,
+          self$layers,
+          wts)
       lapply(self$layers, function(x) x$set_ce_weights())
     },
 
