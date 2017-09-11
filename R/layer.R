@@ -169,7 +169,7 @@ layer <- R6::R6Class("layer",
     },
 
     get_unit_acts = function(){
-      sapply(self$units, function(x) x$act)
+      sapply(self$units, function(x) x$activation)
     },
 
     get_unit_scaled_acts = function(){

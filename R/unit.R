@@ -3,9 +3,10 @@ NULL
 
 #' Leabra unit (neuron) class
 #'
-#' This class simulates a biologically realistic neuron in the lebra framework.
-#' When you use the layer class, you will see that a \link{layer} object has a
-#' variable (field) \code{units}, which is a list of unit objects.
+#' This class simulates a biologically realistic neuron (also called unit) in
+#' the Lebra framework. When you use the layer class, you will see that a
+#' \link{layer} object has a variable (field) \code{units}, which is a list of
+#' unit objects.
 #'
 #' @references O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
 #'   Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
@@ -32,13 +33,13 @@ NULL
 #' u$get_vars(show_dynamics = TRUE, show_constants = TRUE)
 #'
 #' # let us clamp the activation to 0.7
-#' u$act
+#' u$activation
 #' u$clamp_cycle(0.7)
-#' c(u$act, u$avg_s, u$avg_m, u$avg_l)
-#' # act is indeed 0.7, but avg_l was not updated, this only happens before the
-#' # weights are changed, let us update it now
+#' c(u$activation, u$avg_s, u$avg_m, u$avg_l)
+#' # activation is indeed 0.7, but avg_l was not updated, this only happens
+#' # before the weights are changed, let us update it now
 #' u$updt_avg_l()
-#' c(u$act, u$avg_s, u$avg_m, u$avg_l)
+#' c(u$activation, u$avg_s, u$avg_m, u$avg_l)
 #' # seems to work
 #'
 #' # let us run 10 cycles with unclamped activation and output the activation
@@ -49,16 +50,16 @@ NULL
 #'                  u$cycle(g_e_raw = 0.5, g_i = 0.5)$get_vars())
 #' # make a data frame out of the list
 #' result <- plyr::ldply(result)
-#' # plot act
-#' plot(result$act, type = "b", xlab = "cycle", ylab = "act")
+#' # plot activation
+#' plot(result$activation, type = "b", xlab = "cycle", ylab = "activation")
 #' # add conductance g_e to plot, should approach g_e_raw
 #' lines(result$g_e, type = "b", col = "blue")
 #'
-#' @field act Percentage activation ("firing rate") of the unit, which is sent
+#' @field activation Percentage activation ("firing rate") of the unit, which is sent
 #'   to other units, think of it as a percentage of how many neurons are active
 #'   in a microcolumn of 100 neurons.
 #' @field avg_s Short-term running average activation, integrates over avg_ss (a
-#'   private variable, which integrates over act), represents plus phase
+#'   private variable, which integrates over activation), represents plus phase
 #'   learning signal.
 #' @field avg_m Medium-term running average activation, integrates over avg_s,
 #'   represents minus phase learning signal.
@@ -76,11 +77,24 @@ NULL
 #'   conductance \code{g_e_raw} and inhibitory conductance \code{g_i}.
 #'   Excitatory conductance depends on the connection weights to other units and
 #'   the activity of those other units. Inhibitory conductance depends on
-#'   feedforward and feedback inhibition. See \link{layer} cycle method.}
+#'   feedforward and feedback inhibition. See \link{layer} cycle method.
 #'
-#'   \item{\code{clamp_cycle(act)}}{Clamps the value of \code{act}
-#'   to the \code{act} variable of the unit without any time integration. Then
-#'   updates averages. This is usually done when presenting external input.}
+#'     \describe{
+#'       \item{\code{g_e_raw}}{Raw excitatory conductance. The actual excitatory conductance will incrementally approach this value with every cycle.}
+#'
+#'       \item{\code{g_i}}{Inhibitory conductance.}
+#'       }
+#'   }
+#'
+#'   \item{\code{clamp_cycle(activation)}}{Clamps the value of \code{activation}
+#'   to the \code{activation} variable of the unit without any time integration.
+#'   Then updates averages (\code{avg_ss}, \code{avg_s}, \code{avg_m}). This is
+#'   usually done when presenting external input.
+#'
+#'     \describe{
+#'       \item{\code{activation}}{Activation to clamp.}
+#'       }
+#'   }
 #'
 #'   \item{\code{updt_avg_l()}}{Updates the variable \code{avg_l}. This usually
 #'   happens before the weights are changed in the network (after the plus
@@ -91,7 +105,15 @@ NULL
 #'   unit. You can choose whether you want dynamic values and / or constant
 #'   values. This might be useful if you want to analyse what happens in a unit,
 #'   which would otherwise not be possible, because most of the variables
-#'   (fields) are private in this class.}}
+#'   (fields) are private in this class.
+#'
+#'     \describe{
+#'       \item{\code{show_dynamics = T}}{Should dynamics values be shown?}
+#'
+#'       \item{\code{show_constants = F}}{Should constant values be shown?}
+#'     }
+#'   }
+#' }
 #'
 unit <- R6::R6Class("unit",
   # public ---------------------------------------------------------------------
@@ -155,8 +177,8 @@ unit <- R6::R6Class("unit",
       }
 
       # update activity
-      self$act <- self$act + private$cyc_dt * private$v_dt *
-        (new_act - self$act)
+      self$activation <- self$activation + private$cyc_dt * private$v_dt *
+        (new_act - self$activation)
 
       # Update adaptation current
       private$i_adapt <- private$i_adapt + private$cyc_dt *
@@ -168,8 +190,8 @@ unit <- R6::R6Class("unit",
       invisible(self)
     },
 
-    clamp_cycle = function(act){
-      self$act <- act
+    clamp_cycle = function(activation){
+      self$activation <- activation
       private$updt_avgs()
       invisible(self)
     },
@@ -182,11 +204,13 @@ unit <- R6::R6Class("unit",
     },
 
     reset = function(random = F){
-      ifelse(random == T, self$act <- 0.05 + 0.9 * runif(1), self$act <- 0)
-      private$avg_ss <- self$act
-      self$avg_s <- self$act
-      self$avg_m <- self$act
-      self$avg_l <- self$act
+      ifelse(random == T,
+             self$activation <- 0.05 + 0.9 * runif(1),
+             self$activation <- 0)
+      private$avg_ss <- self$activation
+      self$avg_s <- self$activation
+      self$avg_m <- self$activation
+      self$avg_l <- self$activation
       private$g_e <- 0
       private$v <- 0.3
       private$v_eq <- 0.3
@@ -198,7 +222,7 @@ unit <- R6::R6Class("unit",
     get_vars = function(show_dynamics = T, show_constants = F){
       df <- data.frame(unit = self$unit_number)
       dynamic_vars <- data.frame(
-        act = self$act,
+        activation = self$activation,
         avg_ss = private$avg_ss,
         avg_s = self$avg_s,
         avg_m = self$avg_m,
@@ -238,7 +262,7 @@ unit <- R6::R6Class("unit",
     },
 
     # fields -------------------------------------------------------------------
-    act = 0.2,
+    activation = 0.2,
     avg_s = 0.2,
     avg_m = 0.2,
     avg_l = 0.2,
@@ -313,7 +337,7 @@ unit <- R6::R6Class("unit",
   #
   updt_avgs = function(){
     private$avg_ss <- private$avg_ss + private$cyc_dt * private$ss_dt *
-      (self$act - private$avg_ss)
+      (self$activation - private$avg_ss)
     self$avg_s <- self$avg_s + private$cyc_dt * private$s_dt *
       (private$avg_ss - self$avg_s)
     self$avg_m <- self$avg_m + private$cyc_dt * private$m_dt *
