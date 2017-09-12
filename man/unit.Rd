@@ -13,19 +13,20 @@ Object of \code{\link{R6Class}} with methods for calculating neuron
   activation changes.
 }
 \description{
-This class simulates a biologically realistic neuron in the lebra framework.
-When you use the layer class, you will see that a \link{layer} object has a
-variable (field) \code{units}, which is a list of unit objects.
+This class simulates a biologically realistic neuron (also called unit) in
+the Lebra framework. When you use the layer class, you will see that a
+\link{layer} object has a variable (field) \code{units}, which is a list of
+unit objects.
 }
 \section{Fields}{
 
 \describe{
-\item{\code{act}}{Percentage activation ("firing rate") of the unit, which is sent
+\item{\code{activation}}{Percentage activation ("firing rate") of the unit, which is sent
 to other units, think of it as a percentage of how many neurons are active
 in a microcolumn of 100 neurons.}
 
 \item{\code{avg_s}}{Short-term running average activation, integrates over avg_ss (a
-private variable, which integrates over act), represents plus phase
+private variable, which integrates over activation), represents plus phase
 learning signal.}
 
 \item{\code{avg_m}}{Medium-term running average activation, integrates over avg_s,
@@ -48,11 +49,24 @@ a layer, this value will be 1.}
   conductance \code{g_e_raw} and inhibitory conductance \code{g_i}.
   Excitatory conductance depends on the connection weights to other units and
   the activity of those other units. Inhibitory conductance depends on
-  feedforward and feedback inhibition. See \link{layer} cycle method.}
+  feedforward and feedback inhibition. See \link{layer} cycle method.
 
-  \item{\code{clamp_cycle(act)}}{Clamps the value of \code{act}
-  to the \code{act} variable of the unit without any time integration. Then
-  updates averages. This is usually done when presenting external input.}
+    \describe{
+      \item{\code{g_e_raw}}{Raw excitatory conductance. The actual excitatory conductance will incrementally approach this value with every cycle.}
+
+      \item{\code{g_i}}{Inhibitory conductance.}
+      }
+  }
+
+  \item{\code{clamp_cycle(activation)}}{Clamps the value of \code{activation}
+  to the \code{activation} variable of the unit without any time integration.
+  Then updates averages (\code{avg_ss}, \code{avg_s}, \code{avg_m}). This is
+  usually done when presenting external input.
+
+    \describe{
+      \item{\code{activation}}{Activation to clamp.}
+      }
+  }
 
   \item{\code{updt_avg_l()}}{Updates the variable \code{avg_l}. This usually
   happens before the weights are changed in the network (after the plus
@@ -63,7 +77,15 @@ a layer, this value will be 1.}
   unit. You can choose whether you want dynamic values and / or constant
   values. This might be useful if you want to analyse what happens in a unit,
   which would otherwise not be possible, because most of the variables
-  (fields) are private in this class.}}
+  (fields) are private in this class.
+
+    \describe{
+      \item{\code{show_dynamics = T}}{Should dynamics values be shown?}
+
+      \item{\code{show_constants = F}}{Should constant values be shown?}
+    }
+  }
+}
 }
 
 \examples{
@@ -75,13 +97,13 @@ u$v # private values cannot be accessed
 u$get_vars(show_dynamics = TRUE, show_constants = TRUE)
 
 # let us clamp the activation to 0.7
-u$act
+u$activation
 u$clamp_cycle(0.7)
-c(u$act, u$avg_s, u$avg_m, u$avg_l)
-# act is indeed 0.7, but avg_l was not updated, this only happens before the
-# weights are changed, let us update it now
+c(u$activation, u$avg_s, u$avg_m, u$avg_l)
+# activation is indeed 0.7, but avg_l was not updated, this only happens
+# before the weights are changed, let us update it now
 u$updt_avg_l()
-c(u$act, u$avg_s, u$avg_m, u$avg_l)
+c(u$activation, u$avg_s, u$avg_m, u$avg_l)
 # seems to work
 
 # let us run 10 cycles with unclamped activation and output the activation
@@ -92,8 +114,8 @@ result <- lapply(cycle_number, function(x)
                  u$cycle(g_e_raw = 0.5, g_i = 0.5)$get_vars())
 # make a data frame out of the list
 result <- plyr::ldply(result)
-# plot act
-plot(result$act, type = "b", xlab = "cycle", ylab = "act")
+# plot activation
+plot(result$activation, type = "b", xlab = "cycle", ylab = "activation")
 # add conductance g_e to plot, should approach g_e_raw
 lines(result$g_e, type = "b", col = "blue")
 

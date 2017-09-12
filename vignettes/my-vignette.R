@@ -24,10 +24,12 @@ inputs_plus <- net$create_inputs(which_layers = c(1, 3),
 inputs_minus <- lapply(inputs_plus, function(x) {x[3] <- list(NULL); return(x)})
 
 ## ------------------------------------------------------------------------
-n_epochs <- 10
+n_epochs <- 2
 outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
-                                                                 inputs_plus,
-                                                                 lrate = 0.5))
+                                                                 inputs_plus))#,
+                                                                 #lrate = 0.5))
+w0 <- net$get_weights()
+net$set_weights(w0)
 
 ## ------------------------------------------------------------------------
 mad <- net$mad_per_epoch(outs, inputs_plus, 3)
@@ -64,33 +66,49 @@ dim_lays <- list(c(6, 1), c(3, 1))
 connections <- matrix(c(0, 0,
                         1, 0), nrow = 2, byrow = T)
 
-## ---- message=FALSE------------------------------------------------------
+## ------------------------------------------------------------------------
 run_sim <- function(dim_lays, connections, inputs){
   net <- network$new(dim_lays, connections)
-  net$learn_self_organized(inputs)
+  net$learn_self_organized(inputs, lrate = 0.8)
+  net$test_inputs(inputs)
 }
 
-## ------------------------------------------------------------------------
-n_runs <- 100
+## ---- message=FALSE------------------------------------------------------
+n_runs <- 10
 outs <- lapply(seq(n_runs), function(x) run_sim(dim_lays, connections, inputs))
 
 ## ------------------------------------------------------------------------
 outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
 outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
+outs_layer_two <- lapply(outs_layer_two, round, 2)
+round(outs_layer_two[[1]], 2)
+
+## ------------------------------------------------------------------------
+set_won <- function(matrix){
+  t(apply(matrix, 1, function(x) {x[-which.max(x)] <- 0; x}))
+}
+
+set_won2 <- function(matrix){
+  t(apply(matrix, 1, function(x) {x[which.max(x)] <- 1; x}))
+}
+
+outs_layer_two <- lapply(outs_layer_two, set_won)
+outs_layer_two <- lapply(outs_layer_two, set_won2)
 
 ## ------------------------------------------------------------------------
 dists <- lapply(outs_layer_two, dist)
-round(dists[[1]], 2)
+dists <- lapply(dists, function(x) {x[x != 0] <- 1; x})
+dists[[1]]
 
 ## ------------------------------------------------------------------------
-mean_dists <- Reduce("+", dists) / length(dists)
+dists_mtrx <- lapply(dists, as.matrix)
+mean_dists <- Reduce("+", dists_mtrx) / length(dists)
+mean_dists
 
 ## ------------------------------------------------------------------------
-mean_dists_mtrx <- as.matrix(mean_dists)
-colnames(mean_dists_mtrx) <- rownames(animals)
-rownames(mean_dists_mtrx) <- rownames(animals)
+colnames(mean_dists) <- rownames(animals)
+rownames(mean_dists) <- rownames(animals)
 
 ## ---- fig.height=5, fig.width=5------------------------------------------
-library(qgraph)
-qgraph(1 - mean_dists_mtrx, layout = "spring", vsize = 6)
+plot(hclust(as.dist(mean_dists)))
 

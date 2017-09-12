@@ -33,7 +33,7 @@ weights will be set by the \code{\link{network}} object, because they
 depend on the connection to other layers.}
 
 \item{\code{ce_weights}}{Sigmoidal contrast-enhanced version of the weight matrix
-\code{weights}. These weights will also be set by the \code{\link{network}}
+\code{weights}. These weights will be set by the \code{\link{network}}
 object.}
 
 \item{\code{layer_number}}{Layer number in network (this is 1 if you create

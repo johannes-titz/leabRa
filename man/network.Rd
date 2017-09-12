@@ -120,11 +120,11 @@ should change when the method \code{chg_wt()} is called.}
     default is 50.
 
     \code{n_cycles_plus} How many cycles to run in the plus phase,
-    default is 25.}
+    default is 25.
 
-    \code{show_progress} Whether progress of learning should be shown.
+    \code{show_progress} Whether progress of learning should be shown.}
 
- \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles = 50,
+  \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles = 50,
  show_progress = T)}}{Learns to categorize inputs in a self-organized
  fashion.
 
@@ -136,6 +136,16 @@ should change when the method \code{chg_wt()} is called.}
 
     \code{show_progress} Whether progress of learning should be shown.
     }
+
+  \item{\code{test_inputs = function(inputs, n_cycles = 50, show_progress =
+ F)}}{Tests inputs without changing the weights (without learning). This is
+ usually done after several learning runs.
+
+    \code{inputs} Inputs for cycling.
+
+    \code{n_cycles} How many cycles to run, default is 50.
+
+    \code{show_progress} Whether progress of learning should be shown.}
 
   \item{\code{mad_per_epoch(outs_per_epoch, inputs_plus,
   layer)}}{Calculates mean absolute deviation for two lists of activations
