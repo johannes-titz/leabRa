@@ -211,15 +211,11 @@ layer <- R6::R6Class("layer",
       avg_s_with_m <- private$m_avg_prc_in_s_avg * avg_m +
         (1 - private$m_avg_prc_in_s_avg) * avg_s
 
-      # use constant avg_l_lrn value instead of calculating
-      avg_l_lrn <- rep(private$avg_l_lrn, length(avg_l))
-
       list(
         "avg_s" = avg_s,
         "avg_m" = avg_m,
         "avg_l" = avg_l,
-        "avg_s_with_m" = avg_s_with_m,
-        "avg_l_lrn" = avg_l_lrn
+        "avg_s_with_m" = avg_s_with_m
       )
     },
 
@@ -320,10 +316,6 @@ layer <- R6::R6Class("layer",
     g_fbi_dt = 1 / 1.4,      # time step for fb inhibition (fb_tau = 1.4)
     g_i_gain = 2,            # overall gain on inhibition
     avg_act_inert_dt = 0.01,  # time step constant for updating avg_act_inert
-    # in leabra docu, this constant value can be used instead instead of
-    # computing, but note that it is not needed for output layers and for purely
-    # self-organized layers it will reduce amount of learning substantially.
-    avg_l_lrn = 0.0004,
     m_avg_prc_in_s_avg = 0.1, # proportion of medium to short term avg
     ce_off =  1,        # "offset" in the SIG function for contrast enhancement
     ce_gain = 6         # gain in the SIG function for contrast enhancement
