@@ -100,17 +100,17 @@ NULL
 #'   happens before the weights are changed in the network (after the plus
 #'   phase), and not every cycle.}
 #'
-#'   \item{\code{get_vars(show_dynamics = T, show_constants = F)}}{Returns a
-#'   data frame with 1 row with the current state of all the variables of the
-#'   unit. You can choose whether you want dynamic values and / or constant
-#'   values. This might be useful if you want to analyse what happens in a unit,
-#'   which would otherwise not be possible, because most of the variables
-#'   (fields) are private in this class.
+#'   \item{\code{get_vars(show_dynamics = TRUE, show_constants =
+#'   FALSE)}}{Returns a data frame with 1 row with the current state of all the
+#'   variables of the unit. You can choose whether you want dynamic values and /
+#'   or constant values. This might be useful if you want to analyse what
+#'   happens in a unit, which would otherwise not be possible, because most of
+#'   the variables (fields) are private in this class.
 #'
 #'     \describe{
-#'       \item{\code{show_dynamics = T}}{Should dynamics values be shown?}
+#'       \item{\code{show_dynamics = TRUE}}{Should dynamic values be shown?}
 #'
-#'       \item{\code{show_constants = F}}{Should constant values be shown?}
+#'       \item{\code{show_constants = FALSE}}{Should constant values be shown?}
 #'     }
 #'   }
 #' }
@@ -203,8 +203,8 @@ unit <- R6::R6Class("unit",
       invisible(self)
     },
 
-    reset = function(random = F){
-      ifelse(random == T,
+    reset = function(random = FALSE){
+      ifelse(random == TRUE,
              self$activation <- 0.05 + 0.9 * runif(1),
              self$activation <- 0)
       private$avg_ss <- self$activation
@@ -219,7 +219,7 @@ unit <- R6::R6Class("unit",
       invisible(self)
     },
 
-    get_vars = function(show_dynamics = T, show_constants = F){
+    get_vars = function(show_dynamics = TRUE, show_constants = FALSE){
       df <- data.frame(unit = self$unit_number)
       dynamic_vars <- data.frame(
         activation = self$activation,
@@ -256,8 +256,8 @@ unit <- R6::R6Class("unit",
           v_gain           = private$v_gain,
           spike_gain_adapt = private$spike_gain_adapt
         )
-      if (show_dynamics == T) df <- cbind(df, dynamic_vars)
-      if (show_constants == T) df <- cbind(df, constant_vars)
+      if (show_dynamics == TRUE) df <- cbind(df, dynamic_vars)
+      if (show_constants == TRUE) df <- cbind(df, constant_vars)
       return(df)
     },
 
