@@ -35,7 +35,7 @@ NULL
 #' # let us clamp the activation of the 25 units to some random values between
 #' # 0.05 and 0.95
 #' l <- layer$new(c(5, 5))
-#' activations <- 0.05 + runif(25, 0, .9)
+#' activations <- runif(25, 0.05, .95)
 #' l$avg_act
 #' l$clamp_cycle(activations)
 #' l$avg_act
@@ -63,83 +63,121 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
+#'
 #'   \item{\code{new(dim, g_i_gain = 2)}}{Creates an object of this class with
 #'   default parameters.
 #'
-#'     \code{dim} A pair of numbers giving the rows and columns of the layer.
+#'     \describe{
+#'       \item{\code{dim}}{A pair of numbers giving the dimensions (rows and
+#'       columns) of the layer.}
 #'
-#'     \code{g_i_gain} Gain factor for inhibitory conductance, if you want less
-#'     activation in a layer, set this higher.}
+#'       \item{\code{g_i_gain}}{Gain factor for inhibitory conductance, if you
+#'       want less activation in a layer, set this higher.}
+#'     }
+#'   }
 #'
 #'   \item{\code{get_unit_acts()}}{Returns a vector with the activations of all
-#'   units of a layer.}
+#'   units of a layer.
+#'   }
 #'
-#'   \item{\code{get_unit_scaled_acts()}}{get_unit_scaled_acts Returns a vector
-#'   with the scaled activations of all units of a layer. Scaling is done with
+#'   \item{\code{get_unit_scaled_acts()}}{Returns a vector with the scaled
+#'   activations of all units of a layer. Scaling is done with
 #'   \code{recip_avg_act_n}, a reciprocal function of the number of active
-#'   units.}
+#'   units.
+#'   }
 #'
 #'   \item{\code{cycle(intern_input, ext_input)}}{Iterates one time step with
 #'   layer object.
+#'     \describe{
+#'        \item{\code{intern_input}}{Vector with inputs from all other layers.
+#'        Each input has already been scaled by a reciprocal function of the
+#'        number of active units (\code{recip_avg_act_n}) of the sending layer
+#'        and by the connection strength between the receiving and sending
+#'        layer. The weight matrix \code{ce_weights} is multiplied with this
+#'        input vector to get the excitatory conductance for each unit in the
+#'        layer.
+#'        }
 #'
-#'     \code{intern_input} Vector with inputs from all other layers. Each input
-#'   has already been scaled by a reciprocal function of the number of active
-#'   units (\code{recip_avg_act_n}) of the sending layer and by the connection
-#'   strength between the receiving and sending layer. The weight matrix
-#'
-#'   \code{ce_weights} is multiplied with this input vector to get the
-#'   excitatory conductance for each unit in the layer.
-#'
-#'     \code{ext_input} Vector with inputs not coming from another layer, with
-#'   length equalling the number of units in this layer. If empty (\code{NULL}),
-#'   no external inputs are processed. If the external inputs are not clamped,
-#'   this is actually an excitatory conductance value, which is added to the
-#'   conductance produced by the internal input and weight matrix.
+#'        \item{\code{ext_input}}{Vector with inputs not coming from another
+#'        layer, with length equalling the number of units in this layer. If
+#'        empty (\code{NULL}), no external inputs are processed. If the external
+#'        inputs are not clamped, this is actually an excitatory conductance
+#'        value, which is added to the conductance produced by the internal
+#'        input and weight matrix.
+#'        }
+#'     }
 #'   }
 #'
 #'   \item{\code{clamp_cycle(activations)}}{Iterates one time step with layer
 #'   object with clamped activations, meaning that activations are
 #'   instantenously set without time integration.
 #'
-#'     \code{activations} Activations you want to clamp to the units in the
-#'     layer.}
+#'     \describe{
+#'       \item{\code{activations}}{Activations you want to clamp to the units in
+#'       the layer.
+#'       }
+#'     }
+#'   }
 #'
 #'   \item{\code{get_unit_act_avgs()}}{Returns a list with the short, medium and
-#' long term activation averages of all units in the layer as vectors. The super
-#' short term average is not returned, and the long term average is not updated
-#' before being returned (this is done in the function \code{chg_wt()} with
-#' \code{updt_unit_avg_l}). These averages are used by the network class to
-#' calculate weight changes.}
+#'   long term activation averages of all units in the layer as vectors. The
+#'   super short term average is not returned, and the long term average is not
+#'   updated before being returned (this is done in the function \code{chg_wt()}
+#'   with the method\code{updt_unit_avg_l}). These averages are used by the
+#'   network class to calculate weight changes.
+#'   }
 #'
-#' \item{\code{updt_unit_avg_l()}}{Updates the long-term average (avg_l) of all
-#' units in the layer, usually done after a plus phase.}
+#'   \item{\code{updt_unit_avg_l()}}{Updates the long-term average
+#'   (\code{avg_l}) of all units in the layer, usually done after a plus phase.
+#'   }
 #'
 #'   \item{\code{updt_recip_avg_act_n()}}{Updates the \code{avg_act_inert} and
-#' \code{recip_avg_act_n} variables, these variables update before the weights
-#' are changed instead of cycle by cycle. This version of the function assumes
-#' full connectivity between layers.}
+#'   \code{recip_avg_act_n} variables, these variables update before the weights
+#'   are changed instead of cycle by cycle. This version of the function assumes
+#'   full connectivity between layers.
+#'   }
 #'
-#'   \item{\code{reset(random = F)}}{Sets the activation and activation averages
-#' of all units to 0. Used to begin trials from a stationary point.
+#'   \item{\code{reset(random = FALSE)}}{Sets the activation and activation
+#'   averages of all units to 0. Used to begin trials from a stationary point.
 #'
-#'     \code{random} Logical variable, if TRUE the activations are set randomly
-#' between .05 and .95 for every unit instead of 0.}
+#'     \describe{
+#'       \item{\code{random}}{Logical variable, if TRUE the activations are set
+#'       randomly between .05 and .95 for every unit instead of 0.
+#'       }
+#'     }
+#'   }
 #'
-#'   \item{\code{set_ce_weights()}}{Sets contrast enhanced weight values.}
+#'   \item{\code{set_ce_weights()}}{Sets contrast enhanced weight values.
+#'   }
 #'
-#'   \item{\code{get_unit_vars(show_dynamics = T, show_constants = F)}}{Returns
-#'   a data frame with the current state of all unit variables in the
-#'   layer. Every row is a unit. You can choose whether you want dynamic values
-#'   and / or constant values. This might be useful if you want to analyse what
-#'   happens in units of a layer, which would otherwise not be possible, because
-#'   most of the variables (fields) are private in the unit class.}
+#'   \item{\code{get_unit_vars(show_dynamics = TRUE, show_constants =
+#'   FALSE)}}{Returns a data frame with the current state of all unit variables
+#'   in the layer. Every row is a unit. You can choose whether you want dynamic
+#'   values and / or constant values. This might be useful if you want to
+#'   analyse what happens in units of a layer, which would otherwise not be
+#'   possible, because most of the variables (fields) are private in the unit
+#'   class.
+#'     \describe{
+#'       \item{\code{show_dynamics = TRUE}}{Should dynamic values be shown?}
 #'
-#' \item{\code{get_layer_vars(show_dynamics = T, show_constants = F)}}{Returns a
-#' data frame with 1 row with the current state of the variables in the layer.
-#' You can choose whether you want dynamic values and / or constant values. This
-#' might be useful if you want to analyse what happens in a layer, which would
-#' otherwise not be possible, because some of the variables (fields) are private
-#' in the layer class.}}
+#'       \item{\code{show_constants = FALSE}}{Should constant values be shown?}
+#'     }
+#'   }
+#'
+#'   \item{\code{get_layer_vars(show_dynamics = TRUE, show_constants =
+#'   FALSE)}}{Returns a data frame with 1 row with the current state of the
+#'   variables in the layer. You can choose whether you want dynamic values and
+#'   / or constant values. This might be useful if you want to analyse what
+#'   happens in a layer, which would otherwise not be possible, because some of
+#'   the variables (fields) are private in the layer class.
+#'
+#'     \describe{
+#'       \item{\code{show_dynamics = TRUE}}{Should dynamic values be shown?}
+#'
+#'       \item{\code{show_constants = FALSE}}{Should constant values be shown?}
+#'     }
+#'   }
+#' }
 #'
 layer <- R6::R6Class("layer",
   #public ----------------------------------------------------------------------
@@ -150,7 +188,7 @@ layer <- R6::R6Class("layer",
         self$n <- prod(dim)
         unit1 <- unit$new()
         # use cloning
-        self$units <- lapply(seq(self$n), function(x) unit1$clone(deep = T))
+        self$units <- lapply(seq(self$n), function(x) unit1$clone(deep = TRUE))
       } else{
         stop("dim argument should be of the type c(rows, columns)")
       }
@@ -232,7 +270,7 @@ layer <- R6::R6Class("layer",
       invisible(self)
     },
 
-    reset = function(random = F){
+    reset = function(random = FALSE){
       lapply(self$units, function(x) x$reset(random = random))
       invisible(self)
     },
@@ -243,13 +281,14 @@ layer <- R6::R6Class("layer",
       invisible(self)
     },
 
-    get_unit_vars = function(show_dynamics = T, show_constants = F){
+    get_unit_vars = function(show_dynamics = TRUE, show_constants = FALSE){
       unit_vars_list <- lapply(self$units, function(x)
-        x$get_vars(show_dynamics, show_constants))
+                               x$get_vars(show_dynamics, show_constants))
       unit_vars_df <- do.call(rbind, unit_vars_list)
+      return(units_vars_df)
     },
 
-    get_layer_vars = function(show_dynamics = T, show_constants = F){
+    get_layer_vars = function(show_dynamics = TRUE, show_constants = FALSE){
       df <- data.frame(layer = self$layer_number)
       dynamic_vars <- data.frame(
         avg_act = self$avg_act,
@@ -271,8 +310,8 @@ layer <- R6::R6Class("layer",
           g_i_gain             = private$g_i_gain,
           avg_act_inert_dt     = private$avg_act_inert_dt
         )
-      if (show_dynamics == T) df <- cbind(df, dynamic_vars)
-      if (show_constants == T) df <- cbind(df, constant_vars)
+      if (show_dynamics == TRUE) df <- cbind(df, dynamic_vars)
+      if (show_constants == TRUE) df <- cbind(df, constant_vars)
       return(df)
     },
 
