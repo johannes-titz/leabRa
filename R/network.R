@@ -148,7 +148,8 @@ NULL
 #'     patterns, default is 0.3.}
 #'
 #'   \item{\code{learn_error_driven(inputs_minus, inputs_plus, lrate = 0.1,
-#'   n_cycles_minus = 50, n_cycles_plus = 25, show_progress = T)}}{Learns to
+#'   n_cycles_minus = 50, n_cycles_plus = 25, random_order = FALSE,
+#'   show_progress = TRUE)}}{Learns to
 #'   associate specific inputs with specific outputs in an error-driven fashion.
 #'
 #'     \code{inputs_minus} Inputs for the minus phase (the to be learned output
@@ -165,17 +166,22 @@ NULL
 #'     \code{n_cycles_plus} How many cycles to run in the plus phase,
 #'     default is 25.
 #'
+#'     \code{random_order = FALSE} Should the order or stimulus presentation be randomized?
+#'
 #'     \code{show_progress} Whether progress of learning should be shown.}
 #'
-#'   \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles = 50,
-#'  show_progress = T)}}{Learns to categorize inputs in a self-organized
-#'  fashion.
+#'  \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles = 50,
+#'  random_order = FALSE, show_progress = TRUE)}}{Learns to categorize inputs in
+#'  a self-organized fashion.
 #'
 #'     \code{inputs} Inputs for cycling.
 #'
 #'     \code{lrate} Learning rate, default is 0.1.
 #'
 #'     \code{n_cycles} How many cycles to run, default is 50.
+#'
+#'     \code{random_order = FALSE} Should the order or stimulus presentation be
+#'     randomized?
 #'
 #'     \code{show_progress} Whether progress of learning should be shown.
 #'     }
@@ -436,12 +442,17 @@ network <-  R6::R6Class("network",
 
     learn_error_driven = function(inputs_minus, inputs_plus, lrate = 0.1,
                                   n_cycles_minus = 50, n_cycles_plus = 25,
-                                  show_progress = T){
+                                  show_progress = T, random_order = FALSE){
+      order <- seq(inputs_minus)
+      if (random_order == TRUE) order <- sample(order)
+
+      private$gain_e_lrn <- 0
+      private$avg_l_lrn <- 1
       private$gain_e_lrn <- 1
       private$avg_l_lrn <- 0.0004
       outs <- mapply(private$learn_one_pattern_error_driven,
-                     inputs_minus,
-                     inputs_plus,
+                     inputs_minus[order],
+                     inputs_plus[order],
                      pattern_number = seq(length(inputs_minus)),
                      MoreArgs = list(n_cycles_minus = n_cycles_minus,
                                      n_cycles_plus = n_cycles_plus,
@@ -449,22 +460,25 @@ network <-  R6::R6Class("network",
                                      number_of_patterns = length(inputs_minus),
                                      show_progress = show_progress),
                      SIMPLIFY = F)
-      return(outs)
+      return(outs[order(order)])
     },
 
     learn_self_organized = function(inputs, lrate = 0.1,
-                                    n_cycles = 50, show_progress = T){
+                                    n_cycles = 50, show_progress = T,
+                                    random_order = FALSE){
+      order <- seq(inputs)
+      if (random_order == TRUE) order <- sample(order)
       private$gain_e_lrn <- 0
       private$avg_l_lrn <- 1
       outs <- mapply(private$lrn_one_ptrn_self_org,
-                     inputs,
+                     inputs[order],
                      pattern_number = seq(length(inputs)),
                      MoreArgs = list(n_cycles_minus = n_cycles,
                                      lrate = lrate,
                                      number_of_patterns = length(inputs),
                                      show_progress = show_progress),
                      SIMPLIFY = F)
-      return(outs)
+      return(outs[order(order)])
     },
 
     test_inputs = function(inputs, n_cycles = 50, show_progress = F){
