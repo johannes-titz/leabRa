@@ -285,7 +285,7 @@ layer <- R6::R6Class("layer",
       unit_vars_list <- lapply(self$units, function(x)
                                x$get_vars(show_dynamics, show_constants))
       unit_vars_df <- do.call(rbind, unit_vars_list)
-      return(units_vars_df)
+      return(unit_vars_df)
     },
 
     get_layer_vars = function(show_dynamics = TRUE, show_constants = FALSE){
