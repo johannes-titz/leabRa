@@ -8,6 +8,9 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+```{r setup, include = F}
+knitr::opts_chunk$set(cache=T)
+```
 
 This package provides the Leabra artifical neural network algorithm for R. Leabra stands for "local error driven and associative biologically realistic algorithm". It is the Rolls Royce of artifical neural networks because it combines error driven learning and self organized learning in an elegant way, while focusing on a biologically plausible learning rule. If you have never heard of Leabra, you should read about it first. A good place to start is the computational cognitive neuroscience book (Part I): https://grey.colorado.edu/CompCogNeuro/index.php/CCNBook/Main (O'Reilly et al., 2016).
 
@@ -76,10 +79,10 @@ inputs_minus <- lapply(inputs_plus, function(x) {x[3] <- list(NULL); return(x)})
 ```
 
 ### Learning
-Now we can start learning with default parameters. The return value of the learning function is the output activation after each trial. In the next step we will use this output to calculate the error. During learning, the progress is reported by dots that represent a single trial. This means that minus, plus phase and weight changing has been performed for one stimulus. Every row is a new epoch. Epoch is a term in Leabra to describe that all stimuli were presented once.
+Now we can start learning with default parameters. The return value of the learning function is the output activation after each trial before the weights are changed. This way we can save resources, because we do not have to test the inputs again after learning. The first epoch will be kind of baseline of each stimulus. In the next step we will use the output activtions to calculate the error. During learning, the progress is reported by dots that represent a single trial. This means that minus, plus phase and weight changing has been performed for one stimulus. Every row is a new epoch. Epoch is a term in Leabra to describe that all stimuli were presented once.
 
 ```{r}
-n_epochs <- 2
+n_epochs <- 10
 outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
                                                                  inputs_plus))#,
                                                                  #lrate = 0.5))
@@ -143,7 +146,7 @@ The inputs for the network are animals represented by features that are either p
 animals
 ```
 
-Because the network class (at the moment) only accepts a list as external inputs, we transform the data frame rows to elements of a list.
+Because the network class at the moment only accepts a list as external inputs, we transform the data frame rows to elements of a list.
 
 ```{r}
 inputs <- plyr::alply(animals, 1)
@@ -167,12 +170,12 @@ connections <- matrix(c(0, 0,
 ```
 
 ### Learning
-We want to run the simulation not just once, but several times. To achieve this we can write a short function that initializes the network and then learns self-organized. After learning we will test how it reacts to the inputs with the method *test_inputs*. The network will be different every time, because the weights are initialized randomly. You can think of this procedure as if you would let 100 participants observe ten different animals. The difference in participants is mimicked in the different weight matrices for every network. Note that in the last line we test the inputs without learning. This is necessary, because we only run one epoch as compared to error-driven learning, where we simply received the activations just before learning.
+We want to run the simulation not just once, but several times. We can go for 10 times, because the network is small. To achieve this we can write a short function that initializes the network and then learns self-organized. After learning we will test how it reacts to the inputs with the method *test_inputs* (changing weights is turned off in this method). Compared to the network before, we need to do this, because we only run one epoch per simulation. The network will be different for each simulation, because the weights are initialized randomly. You can think of this procedure as if you would let 10 participants observe ten different animals. The difference in participants is mimicked in the different weight matrices for every network.
 
 ```{r}
 run_sim <- function(dim_lays, connections, inputs){
   net <- network$new(dim_lays, connections)
-  net$learn_self_organized(inputs, lrate = 0.8)
+  net$learn_self_organized(inputs)
   net$test_inputs(inputs)
 }
 ```
@@ -185,29 +188,59 @@ outs <- lapply(seq(n_runs), function(x) run_sim(dim_lays, connections, inputs))
 ```
 
 ### Plotting Results
-The output is the activations of each layer after all stimuli were presented. We are actually only interested in layer 2, so let us extract these activations and transform them to data frames (some "wrangling" again).
+The output is the activations of each layer after all stimuli were presented. We are only interested in layer 2, so let us extract these activations and transform them to data frames (some "wrangling" again). We can then look at the outputs of two simulation runs to get a feeling whether it works.
 
 ```{r}
 outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
 outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
 outs_layer_two <- lapply(outs_layer_two, round, 2)
 round(outs_layer_two[[1]], 2)
+round(outs_layer_two[[4]], 2)
 ```
-One problem we can see here is that for some simulations only 2 output units are active, the third is never active. This happens because of hogging, a problem that often occurs in self organized learning. One output unit is just so storng, that it attracts everything; in this case two units are much stronger than the third. There are couple of ways to deal with this problem (see https://grey.colorado.edu/emergent/index.php/Leabra), but for our simple example we can ignore it, because we run several simulations, so it's not a biggy if a couple of them have hogging units.
+Overall, this result looks reasonable. The output units fight for activation, such that only one unit is active most of the time. This is the category of the animal and it seems to work: recall, that the first 4 animals were dog, cat, bat and whale, they are similar.
+One problem we can see here is that for some simulations only 2 output units are active, the third is never active. This happens because of hogging, a problem that often occurs in self organized learning. One output unit is so strong, that it attracts everything; in our case two units are much stronger than the third one. There are couple of ways to deal with hogging (see https://grey.colorado.edu/emergent/index.php/Leabra), but for our simple example we can ignore it, because we run several simulations, so it is not an issue if a couple of them have hogging units.
 
-Certainly, there are many ways to work with these activations. For instance, we could make a forced-choice decision from these activations, by looking at the most active unit in the output layer. Hee, we will calculate the distance (or similarity) between the ten animals in their output activations and then run a cluster analysis.
+Certainly, there are many ways to work with these activations. For instance, we can calculate the distance (or similarity) between the ten animals in their output activation and then run a cluster analysis or draw a heatmap. But a critic might say, that this allows for too much degrees of freedom. The output units can have activations between 0 and 1 and there are three of them. Maybe the 6 binary features will just be mapped onto three units, that have a wide range of possible values. This might not really impressive. We can take a more rigorous cognitive approach: If asking a human about an animal, he or she will take a clear decision in which category to put the animal. Sometimes this can be a close decision, but this will be reflected by different simulation runs through random weights.
+
+Let us transform the matrices to 1 and 0, the maximum value will get 1 and the other ones will get 0. This is a clear-cut decision where to put an animal. We will use a short function for this, that is applied on every row of every output matrix.
+
+```{r}
+apply_threshold_on_row <- function(row){
+  row[-which.max(row)] <- 0
+  row[which.max(row)] <- 1
+  row
+}
+
+outs_layer_two <- lapply(outs_layer_two,
+                         function(x) t(apply(x, 1, apply_threshold_on_row)))
+
+round(outs_layer_two[[1]], 2)
+
+# lost_to_zero <- function(matrix){
+#   t(apply(matrix, 1, function(x) {x[-which.max(x)] <- 0; x}))
+# }
+# 
+# won_to_one <- function(matrix){
+#   t(apply(matrix, 1, function(x) {x[which.max(x)] <- 1; x}))
+# }
+# 
+# outs_layer_two <- lapply(outs_layer_two, set_won)
+# outs_layer_two <- lapply(outs_layer_two, set_won2)
+```
+
+Now, we want to know which animals are grouped together. Here we will just take shortcut. We can calculate the distance matrix for every simulation. Because of the thresholding from above, we know the euclidian distance between two animals is either 0 if they belong to the same category or $\sqrt(2)$ if they do not, so we will just transform $\sqrt(2)$ to 1 and then we know which animals belong together.
 
 ```{r}
 dists <- lapply(outs_layer_two, dist)
-#dists <- lapply(dists, function(x) {x[x != 0] <- 1; x})
+dists <- lapply(dists, function(x) {x[x != 0] <- 1; x})
 dists[[1]]
 ```
-
-This is 1 distance matrix, but we have 10 of them; this is just too much information. We can average these values over the simulation runs by using a cool functional again:
+So here animals 2, 3, 4 and 10 are in one category and the rest in the other. But this is only 1 distance matrix, we have 10 of them; this is just too much information. We can average these values over the simulation runs by using a neat functional again:
 
 ```{r}
 dists_mtrx <- lapply(dists, as.matrix)
 mean_dists <- Reduce("+", dists_mtrx) / length(dists)
+mean_dists
 ```
 
 Now, we need to add the column and row names from the original data set, so that we know which animal is in which row.
@@ -216,7 +249,7 @@ colnames(mean_dists) <- rownames(animals)
 rownames(mean_dists) <- rownames(animals)
 ```
 
-Now, we are finally ready to plot a dendrogramm after clustering:
+We are finally ready to plot a dendrogramm after clustering:
 ```{r, fig.height=5, fig.width=5}
 plot(hclust(as.dist(mean_dists)))
 ```
