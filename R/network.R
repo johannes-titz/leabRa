@@ -288,7 +288,7 @@ network <-  R6::R6Class("network",
       invisible(self)
     },
 
-    chg_wt = function(gain_e_lrn = private$m_lrn){
+    chg_wt = function(){
       private$updt_recip_avg_act_n()
       lapply(self$layers, function(x) x$updt_unit_avg_l())
 
@@ -298,7 +298,8 @@ network <-  R6::R6Class("network",
       avg_l <- lapply(avgs, function(x) x$avg_l)
       avg_m <- lapply(avgs, function(x) x$avg_m)
       avg_s_with_m <- lapply(avgs, function(x) x$avg_s_with_m)
-      avg_l_lrn <- lapply(avgs, function(x) x$avg_l_lrn)
+      avg_l_lrn <- lapply(private$n_units_in_lays,
+                          function (x) rep(private$avg_l_lrn, x))
 
       # For each connection matrix, calculate the intermediate vars
       is_cxn_null <- apply(private$cxn_greater_zero, c(1, 2),
@@ -338,7 +339,7 @@ network <-  R6::R6Class("network",
       dwt_l <- private$m_mapply(function(x, y) x * y, dwt_l, avg_l_lrn_rcv)
 
       # multiply medium average by gain for medium (versus long)
-      dwt_m <- apply(dwt_m, c(1, 2), function(x) x[[1]] * gain_e_lrn)
+      dwt_m <- apply(dwt_m, c(1, 2), function(x) x[[1]] * private$gain_e_lrn)
 
       # combine both dwts and multiply by learning rate
       dwt <- private$m_mapply(function(x, y) x + y, dwt_m, dwt_l)
@@ -419,7 +420,7 @@ network <-  R6::R6Class("network",
         data.frame(
           n_lays = private$n_lays,
           n_units_in_net = private$n_units_in_net,
-          m_lrn = private$m_lrn,
+          gain_e_lrn = private$gain_e_lrn,
           d_thr = private$d_thr,
           d_rev = private$d_rev
         )
@@ -436,6 +437,8 @@ network <-  R6::R6Class("network",
     learn_error_driven = function(inputs_minus, inputs_plus, lrate = 0.1,
                                   n_cycles_minus = 50, n_cycles_plus = 25,
                                   show_progress = T){
+      private$gain_e_lrn <- 1
+      private$avg_l_lrn <- 0.0004
       outs <- mapply(private$learn_one_pattern_error_driven,
                      inputs_minus,
                      inputs_plus,
@@ -451,6 +454,8 @@ network <-  R6::R6Class("network",
 
     learn_self_organized = function(inputs, lrate = 0.1,
                                     n_cycles = 50, show_progress = T){
+      private$gain_e_lrn <- 0
+      private$avg_l_lrn <- 1
       outs <- mapply(private$lrn_one_ptrn_self_org,
                      inputs,
                      pattern_number = seq(length(inputs)),
@@ -481,6 +486,7 @@ network <-  R6::R6Class("network",
     lrate = 0.1,  # learning rate for XCAL
     layers = list()
   ),
+
   # private --------------------------------------------------------------------
   private = list(
     # functions for learning stimuli -------------------------------------------
@@ -1025,12 +1031,11 @@ network <-  R6::R6Class("network",
     n_units_in_lays = NULL,
 
     # constants
-    m_lrn = 1, # proportion of error-driven learning in XCAL
+    gain_e_lrn = 1, # proportion of error-driven learning in XCAL
     d_thr = 0.0001, # threshold for XCAL "check mark" function
     d_rev = 0.1, # reversal value for XCAL "check mark" function
     # g_i_gain for layers, to control overall inhibition in a specific layer
     g_i_gain = 2,
-    avg_l_lrn = list(),
     #dependent
     #m1 = NULL, # the slope in the left part of XCAL's "check mark"
     cxn_greater_zero = matrix(), # binary version of cxn
@@ -1044,6 +1049,10 @@ network <-  R6::R6Class("network",
     # cxn format
     w_init_empty = NULL,
     ext_inputs = NULL,
-    has_layer_ext_input = NULL
+    has_layer_ext_input = NULL,
+    # in leabra docu, this constant value can be used instead instead of
+    # computing, but note that it is not needed for output layers and for purely
+    # self-organized layers it will reduce amount of learning substantially.
+    avg_l_lrn = 0.0004
   )
 )
