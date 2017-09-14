@@ -158,9 +158,13 @@ NULL
 #'   possible, because most of the variables (fields) are private in the unit
 #'   class.
 #'     \describe{
-#'       \item{\code{show_dynamics = TRUE}}{Should dynamic values be shown?}
+#'       \item{\code{show_dynamics}}{Should dynamic values be shown? Default is
+#'       TRUE.
+#'       }
 #'
-#'       \item{\code{show_constants = FALSE}}{Should constant values be shown?}
+#'       \item{\code{show_constants}}{Should constant values be shown? Default
+#'       is FALSE.
+#'       }
 #'     }
 #'   }
 #'
@@ -172,9 +176,13 @@ NULL
 #'   the variables (fields) are private in the layer class.
 #'
 #'     \describe{
-#'       \item{\code{show_dynamics = TRUE}}{Should dynamic values be shown?}
+#'       \item{\code{show_dynamics}}{Should dynamic values be shown? Default is
+#'       TRUE.
+#'       }
 #'
-#'       \item{\code{show_constants = FALSE}}{Should constant values be shown?}
+#'       \item{\code{show_constants}}{Should constant values be shown? Default
+#'       is FALSE.
+#'       }
 #'     }
 #'   }
 #' }
