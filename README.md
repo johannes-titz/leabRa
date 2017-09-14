@@ -8,20 +8,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # todos
-todo: which.max for outs_layer
-markus anmerkungen vignette
+rechtschreibung in docu!
 
-das beispiel für self-organized ist vielleicht irreführend
-
-gain_e_lrn verursacht Inaktivitäten bei Werner...testen
+test building with cran options, go through karl broman guide
 
 Sergio schreiben
 
-eventuell docu mit describe machen für die parameter.
-
 https://cran.r-project.org/web/packages/URL_checks.html
-
-maybe skip creating vignette...critical parts take some time, its a simulation!
 
 test building on windows
 
@@ -38,8 +31,6 @@ Trademarks must be respected.
 
 5. Unit-testing.
 
-6. Check out master in S4...docu..other stuff? I think I'll stick with R6 docu, private classes.
-
 2. Find a general logistic function that approximates the nxx1 or generate a smoother nxx1_df? Right now, I think the step function will be ok in general.
 4. Checkout hogging-modification on leabra-ccn site when self-organizing is ready. I think it works already ok with g_i_gain set correctly.
 
@@ -47,7 +38,7 @@ spiking:
 
 it is very strange that e_rev_e is set to 1, so that v_m (at least i think)
 cannot grow larger than 1, but spike_thr is 1.2, so there will never be a spike
-right
+right; don't know
 
 ## errors
 
@@ -92,6 +83,8 @@ https://grey.colorado.edu/CompCogNeuro/index.php/CCNBook/Neuron adapt.dt_time is
 ((avg_l.lrn_max - avg_l.lrn_min) / avg_l.gain - avg_l.min)) 
 
 should probably be in braces: (avg_l.gain - avg_l.min)
+
+verduzco, name correct on matlab site?
 
 ## Tested:
 1. Vectorize xx1 (this does not bring any gains)
