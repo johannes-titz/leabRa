@@ -9,16 +9,16 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-This package provides the Leabra artifical neural network algorithm for R. Leabra stands for "local error driven and associative biologically realistic algorithm". It is the Rolls Royce of artifical neural networks because it combines error driven learning and self organized learning in an elegant way, while focusing on a biologically plausible learning rule. If you have never heard of Leabra, you should read about it first. A good place to start is the computational cognitive neuroscience book (Part I): https://grey.colorado.edu/CompCogNeuro/index.php/CCNBook/Main (O'Reilly et al., 2016).
+This package provides the Leabra artifical neural network algorithm (O'Reilly, 1996) for R. Leabra stands for "local error driven and associative biologically realistic algorithm". It is the Rolls Royce of artifical neural networks because it combines error driven learning and self organized learning in an elegant way, while focusing on a biologically plausible learning rule. If you have never heard of Leabra, you should read about it first. A good place to start is the computational cognitive neuroscience book (Part I): https://grey.colorado.edu/CompCogNeuro/index.php/CCNBook/Main (O'Reilly et al., 2016).
 
-This version of Leabra is rather slow compared to the original implementation in C++. It was not intended for constructing large networks or running many trials; unless you do not care about processing resources. The main purpose of this implementation is to quickly try out new ideas; either in constructing new networks or in changing the algorithm to achieve certain outcomes. If you would want to do this with the C++ version, you would have to deal with optimized code, that is probably harder to read. Note that the Matlab version by Sergio Verduzuco-Flores (there is a short reference to it on this website: https://grey.colorado.edu/emergent/index.php/Leabra) has the same purpose and I recommend to try it out and read his great documentation. Actually his version was the template for this package and many things are written the same way. Unfortunately, Matlab is non-free (in the libre sense), so I believe that this R version is the easiest way to get familiar with Leabra quickly. This is especially true for psychologists, who are usually acquainted with R already and might want to "wrangle" with the data in their programming mother tongue.
+This version of Leabra is rather slow compared to the original implementation in C++. It was not intended for constructing large networks or running many trials; unless you do not care about processing resources. The main purpose of this implementation is to try out new ideas quickly; either in constructing new networks or in changing the algorithm to achieve certain outcomes. If you would want to do this with the C++ version, you would have to deal with optimized code, which is harder to read. Note that the Matlab version by Sergio Verduzco-Flores (there is a short reference to it on this website: https://grey.colorado.edu/emergent/index.php/Leabra) has the same purpose and I recommend to try it out and to read his great documentation. I still believe that this R version is the easiest way to get familiar with Leabra quickly. In contrast to Matlab, R is entirely free (in the libre sense), so you can just get going by downloading R and installing the leabRa package. This is especially true for psychologists, who are usually acquainted with R already and might want to "wrangle" with the data in their programming mother tongue (R is quite common among psychologists).
 
 What follows is a brief introduction for constructing networks with this package. The first network will be a pattern associator; it associates a specific input with a specific output in an error-driven fashion through a hidden layer. The second network will be a self-organized network that tries to categorize animals represented by feature vectors.
 
 ## Pattern Associator
-You might say, that associating two patterns is unspectacular, because this can be achieved easily by back-propagating errors (Rumelhart et al., 1986). But Leabra uses a much more sophisticated learning rule, which is biologically oriented. In essence, you first present the input without the correct output. After that, you present the input *and* the correct output. Now, the weights are changed in such a way that the next time you present the input, the activation in the output will be more similar to the correct output. Changing weights is done completely *locally*; only the activations of the neurons over different time frames (short, medium and long term) are used to achieve this. Pretty impressive, right?
+Associating two patterns may seem unspectacular at first glance, because this can be achieved easily by back-propagating errors (Rumelhart et al., 1986). But the learning rule employed by Leabra is not only more sophisticated, but also biologically oriented. In essence, you first present the input without the correct output. After that, you present the input *and* the correct output together. Now, the weights are changed in such a way that the activation of the output converges to the correct output, if the same input is shown again. The critical part is that changing weights is done completely *locally*. Only the activations of connected neurons over different time frames (short, medium and long term) are used to achieve this. Pretty impressive, right?
 
-I think of it as if I wanted to learn a new foreign language vocabulary or geography. For instance, I want to associate the country Burkina Faso with its capital Ouagadougou (spelled [waga'du:gu]). In the first phase only Burkina Faso is presented and the neuronal network in my brain will try to produce the correct output Ouagadougou. It will likely not succeed in the beginning, maybe something similar will be output, but not the correct city. After this phase Burkina Faso and Ouagadougou are presented at the same time. Now, the spreading of activation will be correct. After these two phases the weights are changed, such that the next time I see Burkina Faso the output will be more similar to Ouagadougou. This adjustment happens by just looking at how active the units were over short, medium and long time frames; variables that are likely available to a biologically realistic neuron.
+I think of it as if I wanted to learn a new foreign language vocabulary or geography. For instance, I want to associate the country Burkina Faso with its capital Ouagadougou (spelled [waga'du:gu]). In the first phase only Burkina Faso is presented and the neuronal network in my brain will try to produce the correct output Ouagadougou. It will likely not succeed in the beginning, maybe something similar will be output, but not the correct city. After this phase Burkina Faso and Ouagadougou are presented simultaneously. Now it is time to change the weights so that the output will be more similar to Ouagadougou. This adjustment depends only on the neuron's activation over short, medium and long time frames; variables that are likely available to a real biological neuron.
 
 ### Constructing the Network
 Let us load the package
@@ -26,19 +26,19 @@ Let us load the package
 library(leabRa)
 ```
 
-To reproduce the example we can use a seed. You can try to guess whose birthday is on July 22nd, 1904.
+To reproduce the example we can use a seed. Try to guess who was born on July 22nd, 1904.
 ```{r}
 set.seed(07221904)
 ```
 
-To construct a network, we will at least need the dimensions of the network and the connections between the layers. We will specify three layers: input -- hidden -- output. They are quite small, so that the calculations do not take too long. The first layer will have dimensions of $2 \times 5$ (2 rows, 5 columns), the second of $2 \times 10$ and the third of $2 \times 5$ again. Note that these dimensions are not really relevant for the algorithm, because the units are vectorized internally, so we could have specified $1 \times 10$ or $5 \times 2$ for layer 1 as well; they all would have 10 units.
+To construct a network, we have to specify the dimensions of the network and the connections between the layers. We will create three layers: input -- hidden -- output. They are quite small to keep calculation time low. The first layer will have dimensions of $2 \times 5$ (2 rows, 5 columns), the second of $2 \times 10$ and the third of $2 \times 5$ again. Note that these dimensions are not relevant for the algorithm, because the units are vectorized internally, so we could have specified $1 \times 10$ or $5 \times 2$ for layer 1 as well.
 
 ```{r}
 dim_lays <- list(c(2, 5), c(2, 10), c(2, 5))
 ```
 
 Let us now specify the connections between these layers. Layer 1 (input) should be connected with layer 2 (hidden). Layer 3 (output) will be bidirectionally connected with layer 2. If layer j sends projections to layer i, then 
-connections[i, j] = strength > 0 and 0 otherwise. Strength specifies the relative strength of that connection with respect to the other projections to layer i. More intuitvely, just look at the rows and you will see that row (layer) 2 receives from columns (layers) 1 and 3; the connection with layer 1 is 5 times stronger ($0.2 \cdot 5 = 1$) than the connection with layer 3. Furthermore, row (layer) 3 receives from column (layer) 2. Row 1 (layer 1) does not receive from anywhere, because all connection strengths are set to 0.
+connections[i, j] = strength > 0 and 0 otherwise. Strength specifies the relative strength of that connection with respect to the other projections to layer i. More intuitively, just look at the rows and you will see that row (layer) 2 receives from columns (layers) 1 and 3; the connection with layer 1 is 5 times stronger ($0.2 \cdot 5 = 1$) than the connection with layer 3. Furthermore, row (layer) 3 receives from column (layer) 2. Row 1 (layer 1) does not receive from anywhere, because all connection strengths are set to 0.
 
 ```{r}
 connections <- matrix(c(0, 0, 0,
@@ -56,7 +56,7 @@ net <- network$new(dim_lays, connections)
 
 As a side note, the package is an R6 package, a special type of object oriented programming that behaves differently to the usual R object oriented programming style (S3 or S4). You can see this, because we call the method of a class with the dollar sign (network**$**new(...)) instead of using a generic function. Furthermore, variables are also accessed via the dollar sign instead of the at-sign @.
 
-*dim_lays* and *connections* is the minimum you need to specify a network, but if constructing other networks you should pay careful attention to *g_i_gain*, which controls overall inhibition in a layer (inhibitory condutance gain). If this value is not set carefully, you might not get what you want (too much or not enough activation).
+*dim_lays* and *connections* is the minimum you need to specify a network, but if constructing other networks you should pay attention to *g_i_gain*, which controls overall inhibition in a layer (inhibitory conductance gain). If this value is not set carefully, you might not get what you want (too much or not enough activation).
 
 ### Creating Input Patterns
 Now, we have a network, but no inputs. Let us create 15 random patterns with the method *create_inputs* in the network class. We want random patterns in layer 1 and 3, that are supposed to be associated during learning. We call these inputs inputs_plus, because this is what is presented to the network during the plus phase (correct output in layer 3 is presented). *prop_active* is the amount of active units in the patterns, activation is either 0.05 or 0.95. We choose .3, meaning that on average 30% of units will have an activation of 0.95 and 70% an activation of 0.05.
@@ -67,16 +67,16 @@ inputs_plus <- net$create_inputs(which_layers = c(1, 3),
                                  prop_active = .3)
 ```
 
-You could also create inputs with your own functions. The network will accept an external input list that has the length of the number of layers. Every element in the list should have the actviation values of the neurons for the specific layer.
+It is possible to create inputs with your own functions. The network will accept an external input list that has the length of the number of layers. Every element in the list should have the activation values of the neurons for the specific layer.
 
-For error-driven learning in Leabra fashion, we will need to remove the inputs of the output layer (layer 3) for the minus phase. We will call this list inputs_minus (the correct output is missing, it was subtracted). Functionals are neat, so we will use lapply here:
+For error-driven learning in Leabra fashion, we need to remove the inputs of the output layer (layer 3) for the minus phase. We will call this list inputs_minus (the correct output is missing, it was subtracted). Functionals are neat, so we will use lapply here:
 
 ```{r}
 inputs_minus <- lapply(inputs_plus, function(x) replace(x, 3, list(NULL)))
 ```
 
 ### Learning
-Now we can start learning with default parameters. The return value of the learning function is the output activation after each trial before the weights are changed. This way we can save resources, because we do not have to test the inputs again after learning. The first epoch will be kind of baseline of each stimulus. In the next step we will use the output activations to calculate the error. During learning, the progress is reported by dots that represent a single trial. This means that minus, plus phase and weight changing has been performed for one stimulus. Every row is a new epoch. Epoch is a term in Leabra to describe that all stimuli were presented once.
+Now we can start learning with default parameters. The return value of the learning function is the output activation after each trial before the weights are changed. This way we save resources, because we do not have to present the inputs again after learning. The first epoch will be an approximate baseline of each stimulus. In the next step we will use the output activations to calculate the error. During learning, the progress is reported by dots representing a single trial. This means that minus phase, plus phase and weight changing has been performed for one stimulus. Every row is a new epoch, which is a term to describe that all stimuli were presented once.
 
 ```{r}
 n_epochs <- 10
@@ -85,18 +85,18 @@ outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
 ```
 
 ### Plotting Results
-The network class can calculate the mean absolute deviation (MAD) for each epoch. You can also use your own functions on these lists to calculate other types of errors like the cosine error. We will need the error for layer 3 (output).
+The network class can calculate the mean absolute distance (mad) with the method *mad_per_epoch* between the actual and correct patterns for each epoch. You can also use your own functions on these lists to calculate other types of errors like the cosine error. We are interested in the error of layer 3 (output).
 
 ```{r}
 mad <- net$mad_per_epoch(outs, inputs_plus, 3)
 ```
 
-How about a nice minimalistic plot to see if it worked?
+How about a minimalist plot to see if it worked?
 
 ```{r, fig.height=4, fig.show='hold', fig.width=6}
 plot(mad, axes = F, pch = 16, family = "serif", type = "b",
      xlab = "epoch [#]",
-     ylab = "mean absolute deviation [activation]",
+     ylab = "mean absolute distance [activation]",
      ylim = c(round(min(mad), 2), round(max(mad + 0.01), 2)))
 axis(1, at = seq(length(mad)), tick = T, family = "serif")
 axis(2, at = seq(0, 1, 0.05), labels = seq(0, 1, 0.05), tick = T,
@@ -106,22 +106,22 @@ axis(2, at = seq(0, 1, 0.05), labels = seq(0, 1, 0.05), tick = T,
 The error gets smaller with each epoch, so the pattern associator seems to work just fine.
 
 ### Some Additional Notes
-You can influence how many cycles should be run during the minus and plus phase, which are parameters for the *learn_error_driven* method. Besides, you could also implement your own functions to learn. Internally the *learn_error_driven* method is straightforward. It just use the method *cycle* to clamp the external input activations and to get the internal inputs from other layers. This is done several times for the minus phase (e.g. 50 times by default) and then for the plus phase (e.g. 25 times by default). After that, the method *chg_wt* is called to adjust the weights. This procedure is repeated for every stimulus.
+You can influence how many cycles should be run during the minus phase and the plus phase, which are parameters for the *learn_error_driven* method. Besides, you could also implement your own functions to learn. Internally the *learn_error_driven* method is straightforward. It uses the method *cycle* to clamp the external input activations and to get the internal inputs from other layers. This is done several times for the minus phase (e.g. 50 times by default) and then for the plus phase (e.g. 25 times by default). After that, the method *chg_wt* is called to adjust the weights. This procedure is repeated for every stimulus.
 
-If you want to modify the initial weight matrix you have some options. When creating the network you can specify a function to create a random weight. The default function is:
+If you want to modify the initial weight matrix you have several options. When creating the network, you can specify a function to create a random weight. The default function is:
 
 ```{r}
-w_init_fun = function(x) 0.3 + 0.4 * runif(x)
+w_init_fun = function(x) runif(x, 0.3, 0.7)
 ```
 
-It produces weights between 0.3 and 0.7 from a uniform distribution. Let us say, you want to generate weights from a normal distribution with a mean of 0.6 and a standard deviation of 0.1. You could specify the *w_init_fun* accordingly when constructing a new network object:
+It produces weights between 0.3 and 0.7 from a uniform distribution. Let us say, you want to generate weights from a normal distribution with a mean of 0.6 and a standard deviation of 0.1. Just specify the *w_init_fun* accordingly when constructing a new network object:
 
 ```{r}
 net <- network$new(dim_lays, connections,
                    w_init_fun = function(x) rnorm(x, mean = 0.6, sd = 0.1))
 ```
 
-This might not be enough flexibility, so you can also create your own weight_matrix from scratch and just pass it as the parameter *w_init*, the initial weight matrix. *w_init* is a matrix of matrices (like a cell array in matlab):
+If this does not offer enough flexibility, you can also create your own weight matrix from scratch and pass it as the parameter *w_init*, the initial weight matrix. *w_init* is a matrix of matrices (like a cell array in matlab):
 
 ```{r}
 all_weights <- net$get_weights()
@@ -129,12 +129,12 @@ all_weights
 all_weights[3, 2]
 ```
 
-Pay attention when you create a *w_init* matrix on your own.
+Be careful when you create a *w_init* matrix on your own.
 
 As mentioned before, this package uses R6 classes, meaning that you do not have to assign objects in the usual R way. For instance calling net$learn_error_driven above, actually modified the net object, although we did not make any explicit assignment. This is unusual for R and has some disadvantages, but it is faster and uses less resources (ideal for a simulation) than the more common S3/S4 classes. Just pay attention when you call methods in this package. They will modify objects in place.
 
 ## Hello World in "Connectionism": Categorizing Animals
-Every time I get familiar with a neural network software, I try to create some typical examples. Certainly, one is the pattern associator. For me, another one is the example by Knight (1990) for unsupervised (self-organized) learning of animals. This is kind of my "hello world" for artifical neural networks.
+Every time I get familiar with a neural network software, I try to create some typical examples. Certainly, one is the pattern associator. For me, another one is the example by Knight (1990) for unsupervised (self-organized) learning of animals. This developed to my "hello world" for artifical neural networks.
 
 Again, let us set a seed, so you can reproduce the example.
 
@@ -151,22 +151,22 @@ The inputs for the network are animals represented by features that are either p
 animals
 ```
 
-Because the network class at the moment only accepts a list as external inputs, we transform the data frame rows to elements of a list.
+Because the network class only accepts a list as external inputs at the moment, we transform the data frame rows to elements of a list.
 
 ```{r}
 inputs <- plyr::alply(animals, 1)
 ```
 
-Furthermore we will need an empty list element (NULL) for the second layer.
+Furthermore we need an empty list element (NULL) for the second layer.
 
 ```{r}
 inputs <- lapply(inputs, function(x) list(x, NULL))
 ```
 
-This is what I meant, when I wrote that R people might prefer wrangling with the data in their mother tongue.
+This is what I meant, when I wrote that R people might prefer wrangling with data in their mother tongue.
 
 ### Network Architecture
-We will use a 2-layer network, where layer 2 receives from layer 1. The size of layer 1 must be 6, because there are 6 features for representing an animal. The size of layer 2 is 3, meaning that the inputs will be categorized into three groups. You can experiment with the number of units in layer 2 to get other categories.
+We will use a 2-layer network, where layer 2 receives projections from layer 1. The size of layer 1 must be 6, because there are 6 features for representing an animal in our example. The size of layer 2 is 3, meaning that the inputs will be categorized into three groups (the active unit will be the category). You can experiment with the number of units in layer 2 to get other categories.
 
 ```{r}
 dim_lays <- list(c(6, 1), c(3, 1))
@@ -175,7 +175,7 @@ connections <- matrix(c(0, 0,
 ```
 
 ### Learning
-We want to run the simulation not just once, but several times to get a feeling for how much the results can vary. To achieve this, we can write a short function that initializes the network and then learns self-organized. After learning we will test how it reacts to the inputs with the method *test_inputs* (changing weights is turned off in this method). Compared to the network before, we need to do this, because we will only run one epoch per simulation. The network will be different for each simulation, because the weights are initialized randomly. You can think of this procedure as if you would let several participants observe ten different animals. The difference in participants is mimicked in the different weight matrices for every network.
+We want to run the simulation not just once, but several times to get a feeling for how much the results can vary. To achieve this, we can write a short function that initializes the network and then learns self-organized. After the learning is done, we test the network's reactions to the shown inputs with the method *test_inputs* (changing weights is turned off in this method). Compared to the network before, we have to do this, because the learning phase will only last one epoch per simulation. The network will be different for each simulation, because the weights are initialized randomly. You can think of this procedure as if you would let several participants observe ten different animals. The difference between participants is mimicked in the different weight matrices for every network.
 
 ```{r}
 run_sim <- function(dim_lays, connections, inputs){
@@ -193,14 +193,14 @@ outs <- lapply(seq(n_runs), function(x) run_sim(dim_lays, connections, inputs))
 ```
 
 ### Plotting Results
-The output is the activations of each layer after all stimuli were presented once. We are only interested in layer 2, so let us extract these activations and transform them to data frames (some "wrangling" again). We can then look at the outputs of two simulation runs to get a feeling for whether it worked.
+The output for each run is the activations of each layer after all stimuli were presented once. We are only interested in layer 2, so let us extract these activations and transform them into data frames (some "wrangling" again). We can then look at the outputs of two simulation runs to get a feeling for whether it worked.
 
 ```{r}
 outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
 outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
 outs_layer_two <- lapply(outs_layer_two, round, 2)
 ```
-Let us have a look at the third simulation as an example:
+To inspect the third simulation we just call:
 ```{r}
 outs_layer_two[[3]]
 ```
@@ -211,11 +211,11 @@ The output units fight for activation, such that only one unit is active most of
 outs_layer_two[[1]]
 ```
 
-One problem we can see here is that only 2 output units are active, the third one is never active. This happens because of hogging, a problem that often occurs in self organized learning (e.g. Knight, 1990). Some output units are so strong, that they attract everything. This can also happen with a single unit. There are couple of ways to deal with hogging (see https://grey.colorado.edu/emergent/index.php/Leabra), but for our simple example we can ignore it, because we run several simulations, so it is not an issue if a couple of them have hogging units. Maybe this also reflects that grouping animals is to some degree subjective and sometimes only two categories can emerge.
+One problem we can see here is that only 2 output units are active. This happens because of "hogging", a problem that often occurs in self organized learning (e.g. Knight, 1990). Some output units are so strong, that they attract everything. This can also happen with a single unit. There are couple of ways to deal with hogging (see https://grey.colorado.edu/emergent/index.php/Leabra), but for our simple example we can ignore it, because we have run several simulations, so it is not an issue if a couple of them have hogging units. Maybe this also reflects that grouping animals is to some degree subjective and sometimes only two categories emerge.
 
-There are many ways to work with these output activations. For instance, we can calculate the distance between the ten animals in their output activation and then run a cluster analysis or draw a heatmap. But the devil's advocate might say, that this allows for too much degrees of freedom. The output units can have activations between 0 and 1 and there are three of them. Maybe the 6 binary features will just be mapped onto three units, that have a wide range of possible values. This might not really be impressive. We can take a more rigorous cognitive approach: If asking a human about an animal, he or she will make a clear decision in which category to put the animal. Sometimes this can be a close decision, but this will be reflected by different simulation runs through random weights.
+There are many ways to work with these output activations. For instance, we can calculate the distance between the ten animals in their output activation and then run a cluster analysis or draw a heatmap. But the devil's advocate might say, that this allows for too much degrees of freedom. The output units can have activations between 0 and 1 and there are three of them. Maybe the 6 binary features will just be mapped onto three units, that have a wide range of possible values. This might not really be impressive. Instead we can try to force the network to make a clear decision in which category to put an animal (one, two or three). This is also more similar to how we would prompt human participants in a cognitive experiment. For instance, we could ask them to group animals into three categories; every animal would be exactly in one category.
 
-Let us transform the activation matrices to 1 and 0, the maximum value will get 1 and the other ones will get 0. This is a clear-cut decision in which category to put an animal. We will use a short function for this, that is applied on every row of every output matrix.
+To achieve this, we can transform the activation matrices to 1 and 0, the maximum value will get 1 and the other ones will get 0. This is a clear-cut decision in which category to put an animal. We will use a short function for this, that is applied on every row of every output matrix.
 
 ```{r}
 apply_threshold_on_row <- function(row){
@@ -230,11 +230,10 @@ outs_layer_two <- lapply(outs_layer_two,
 outs_layer_two[[1]]
 ```
 
-Now, we want to know which animals are grouped together. Here, we will just take a shortcut by calculating the distance matrix for every simulation. Because of the thresholding from above, we know the euclidian distance between two animals is either 0 if they belong to the same category or $\sqrt(2)$ if they do not, so we will just transform $\sqrt(2)$ to 1 and then we know which animals belong together.
+Now, we want to know which animals are grouped together. Here, we take a shortcut by calculating the binary distance matrix for every simulation. Because of the thresholding from above, we know the distance between two animals is either 0 if they belong to the same category or 1 if they do not.
 
 ```{r}
-dists <- lapply(outs_layer_two, dist)
-dists <- lapply(dists, function(x) replace(x, x != 0, 1))
+dists <- lapply(outs_layer_two, dist, method = "binary")
 dists[[1]]
 ```
 So here animals 2, 3, 4 and 10 are in one category and the rest in the other. But this is only 1 distance matrix, we have 10 of them; this is just too much information. We can average these values over the simulation runs by using a neat functional again:
@@ -245,26 +244,28 @@ mean_dists <- Reduce("+", dists_mtrx) / length(dists)
 mean_dists
 ```
 
-Now, we need to add the column and row names from the original data set, so that we know which animal is in which row.
+We need to add the row names from the original data set, so that we know which animal is which.
 ```{r}
 colnames(mean_dists) <- rownames(animals)
 rownames(mean_dists) <- rownames(animals)
 ```
 
-We are finally ready to apply clustering and then plot a dendrogramm:
-```{r, fig.height=5, fig.width=5}
+We are finally ready to apply clustering and then plot a dendrogram:
+```{r, fig.height=4, fig.width=6}
 plot(hclust(as.dist(mean_dists)), main = "", sub = "", xlab = "",
      ylab = "Distance")
 ```
 
-There seem to emerge three natural categories. The distance between two animals in each category is always zero (they have the same feature vectors), which means they are identical (1. snake and lizard; 2 canary and robin 3. dog and cat). The more interesting part is what happens with the alligator, ostrich, whale and bat. The alligator is grouped with snake and lizard, these are the reptiles, although the alligator is not a typical member because it lives in water. The ostrich, is grouped with canary and robin, the birds. Although it cannot fly, it still makes sense to put the ostrich in this category. Finally, the whale and bat are grouped together with dog and cat, the mammals. They are rather untypical members of this category, but zoologist also group them this way. Obviously, the example by Knight is somewhat artifical, but in this sense it also my favorite "hello world" example for *artifical* neural networks.
+Three natural categories seem to emerge. The distance between two animals in each category is always zero, which means they are identical (1. snake and lizard; 2 canary and robin 3. dog and cat). The more interesting part is what happens with the alligator, ostrich, whale and bat. The alligator is grouped with snake and lizard. These are the reptiles, although the alligator is not a typical member because it lives in water. The ostrich is grouped with canary and robin, the birds. Although it cannot fly, it still makes sense to put the ostrich in this category. Finally, the whale and the bat are grouped together with dog and cat, the mammals. They are rather untypical members of this category, but zoologist also group them this way. Obviously, the example by Knight is somewhat artificial, but in this sense it also my favorite "hello world" example for artificial neural networks.
 
 ## Summary and Restrictions
-These examples show that leab*R*a seems to work fine for two typical use cases. Still, I cannot guarantee that the code is correct in every detail. Furthermore, there are some differences to the original C++ code. For instance, you cannot specify partial connections. Besides, the nxx1-function is a step-function to reduce calculation resources. Overall, the algorithm should still produce very similar results to the original Leabra implementation.
+These examples show that leab*R*a seems to work fine for two typical use cases. Still, I cannot guarantee that the code is correct in every detail. Furthermore, there are some differences to the original C++ code (as of the time of writing this documentation, September 2017). For instance, you cannot specify partial connections and the nxx1-function is a step-function to reduce calculation resources. Besides, compared to the default in the current emergent version, the R version does not use momentum for calculating weight changes. Overall, the algorithm should still produce very similar results to the original Leabra implementation.
 
 ## References
 Knight, K. (1990). Connectionist ideas and algorithms. *Communications of the ACM*, *33*(11), 59–74.
 
+O'Reilly, R. C. (1996). *The Leabra Model of Neural Interactions and Learning in the Neocortex*. Phd Thesis, Carnegie Mellon University, Pittsburgh. URL: ftp://grey.colorado.edu/pub/oreilly/thesis/oreilly_thesis.all.pdf
+
 O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and Contributors (2016). *Computational Cognitive Neuroscience*. Wiki Book, 3rd (partial) Edition. URL: http://ccnbook.colorado.edu
 
-Rumelhart, D E., Hinton, G. E., & Williams, R. J. (1986). Learning representations by back-propagating errors. *Nature*. *323*(6088): 533–536. doi:10.1038/323533a0.
+Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). Learning representations by back-propagating errors. *Nature*. *323*(6088): 533–536. doi:10.1038/323533a0.
