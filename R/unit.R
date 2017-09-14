@@ -108,9 +108,13 @@ NULL
 #'   the variables (fields) are private in this class.
 #'
 #'     \describe{
-#'       \item{\code{show_dynamics = TRUE}}{Should dynamic values be shown?}
+#'       \item{\code{show_dynamics}}{Should dynamic values be shown? Default is
+#'       TRUE
+#'       }
 #'
-#'       \item{\code{show_constants = FALSE}}{Should constant values be shown?}
+#'       \item{\code{show_constants}}{Should constant values be shown? Default
+#'       is FALSE
+#'       }
 #'     }
 #'   }
 #' }
@@ -205,7 +209,7 @@ unit <- R6::R6Class("unit",
 
     reset = function(random = FALSE){
       ifelse(random == TRUE,
-             self$activation <- 0.05 + 0.9 * runif(1),
+             self$activation <- runif(1, 0.05, 0.95),
              self$activation <- 0)
       private$avg_ss <- self$activation
       self$avg_s <- self$activation
