@@ -6,7 +6,7 @@ NULL
 #' Class to simulate a biologically realistic network of neurons
 #' (\code{\link{unit}s}) organized in \code{\link{layer}s}
 #'
-#' This class simulates a biologically realistic artifical neuronal network in
+#' This class simulates a biologically realistic artificial neuronal network in
 #' the lebra framework (e.g. O'Reilly et al., 2016). It consists of several
 #' \code{\link{layer}} objects in the variable (field) \code{layers} and some
 #' network-specific variables.
@@ -131,8 +131,8 @@ NULL
 #'     }
 #'   }
 #'
-#'   \item{\code{chg_wt()}}{Changes the weights of the entire network
-#'   with the XCAL learning equation.
+#'   \item{\code{chg_wt()}}{Changes the weights of the entire network with the
+#'   XCAL learning equation.
 #'   }
 #'
 #'   \item{\code{reset(random = F)}}{Sets the activation of all units in all
@@ -174,7 +174,7 @@ NULL
 #'
 #'     \describe{
 #'       \item{\code{inputs_minus}}{Inputs for the minus phase (the to be
-#'       learned output ist not presented).
+#'       learned output is not presented).
 #'       }
 #'
 #'       \item{\code{inputs_plus}}{Inputs for the plus phase (the to be learned
@@ -216,7 +216,7 @@ NULL
 #'       }
 #'
 #'       \item{\code{random_order}}{Should the order of stimulus presentation be
-#'       randomized? Default ist FALSE.
+#'       randomized? Default is FALSE.
 #'       }
 #'
 #'       \item{\code{show_progress}}{Whether progress of learning should be
@@ -318,6 +318,9 @@ NULL
 #'     }
 #'   }
 #' }
+#'
+#' @importFrom plyr aaply
+#' @importFrom plyr ldply
 network <-  R6::R6Class("network",
   public = list(
     initialize = function(dim_lays, cxn,
@@ -417,7 +420,7 @@ network <-  R6::R6Class("network",
                                 s_hebb,
                                 l_rcv)
 
-      # multiply longerm average by individual unit scaling factor
+      # multiply long term average by individual unit scaling factor
 
       dwt_l <- private$m_mapply(function(x, y) x * y, dwt_l, avg_l_lrn_rcv)
 
@@ -490,7 +493,7 @@ network <-  R6::R6Class("network",
         x$get_layer_vars(show_dynamics = show_dynamics,
                          show_constants = show_constants))
       comb <- Map(function(x, y) cbind(x, y), unit_vars, layer_vars)
-      plyr::ldply(comb, data.frame)
+      ldply(comb, data.frame)
     },
 
     get_network_vars = function(show_dynamics = T, show_constants = F){
@@ -592,7 +595,7 @@ network <-  R6::R6Class("network",
     # clamp_inp whether input should be clamped
     #
     # reset whether the network should be reset to a stationary point before
-    # cycling (this can be extended by using the the random parameter in reset
+    # cycling (this can be extended by using the random parameter in reset
     # if one wants random activations)
     #
     # returns invisible self
@@ -619,10 +622,10 @@ network <-  R6::R6Class("network",
     # clamp_inp whether input should be clamped
     #
     # reset whether the network should be reset to a stationary point before
-    # cycling (this can be extended by using the the random parameter in reset
+    # cycling (this can be extended by using the random parameter in reset
     # if one wants random activations)
     #
-    # returns activties of all units after minus phase (before learning)
+    # returns activations of all units after minus phase (before learning)
     learn_one_pattern_error_driven = function(input_minus, input_plus,
                                               pattern_number,
                                               number_of_patterns,
@@ -779,9 +782,9 @@ network <-  R6::R6Class("network",
         error <- (paste("Cannot create network. You have ",
                         length(private$dim_lays), " layer(s) and ",
                         nrow(private$cxn), " rows in the ", "connection matrix.
-                        You need to specify cxn for every layer, so the number
-                        of rows and columns in the connection matrix must equal
-                        the number of layers.", sep = ""))
+                        You need to specify the connection for every layer, so
+                        the number of rows and columns in the connection matrix
+                        must equal the number of layers.", sep = ""))
         stop(error)
       }
     },
@@ -801,7 +804,7 @@ network <-  R6::R6Class("network",
     are_there_negative_cxn = function(){
       if (min(private$cxn) < 0){
         error <- paste("Cannot create network. Negative projection strengths
-                       between layers are not allowed in cxn matrix.")
+                       between layers are not allowed in connection matrix.")
         stop(error)
       }
     },
@@ -811,7 +814,7 @@ network <-  R6::R6Class("network",
     # layer has a sum of strengths from all other layers of 1, if there are any
     # connections at all.
     normalize_cxn = function(){
-      private$cxn <- plyr::aaply(private$cxn, 1,
+      private$cxn <- aaply(private$cxn, 1,
                                  function(x) if (sum(x) > 0) x / sum(x) else x)
     },
 
@@ -824,7 +827,7 @@ network <-  R6::R6Class("network",
     },
 
     # there are a couple of variables that count how many units are in the
-    # network, in the layers and for every cxn
+    # network, in the layers and for every connection
     set_all_unit_numbers = function(){
       private$n_units_in_lays <- sapply(self$layers, function(x) x$n)
       private$n_units_in_net <- Reduce("+", private$n_units_in_lays)
@@ -852,10 +855,10 @@ network <-  R6::R6Class("network",
     set_all_w_vars = function(){
       private$w_init_empty <- matrix(sapply(private$w_init, private$isempty),
                                     nrow = nrow(private$w_init))
-      private$w_index_low <- plyr::aaply(private$n_units_in_snd_lays, 1,
+      private$w_index_low <- aaply(private$n_units_in_snd_lays, 1,
                                          function(x) head(c(1, cumsum(x) + 1),
                                                           -1))
-      private$w_index_up <- plyr::aaply(private$n_units_in_snd_lays, 1,
+      private$w_index_up <- aaply(private$n_units_in_snd_lays, 1,
                                         function(x) cumsum(x))
     },
 
@@ -883,7 +886,7 @@ network <-  R6::R6Class("network",
     con_lays_have_wt = function(){
       cxn_no_w <- private$cxn > 0 & private$w_init_empty
       if (sum(cxn_no_w) > 0) {
-        stop(paste("Connected layers have no weight matrix. Check thefollowing
+        stop(paste("Connected layers have no weight matrix. Check the following
                    row(s) and column(s) ([row, column]) in initial weight matrix
                    and connection matrix: \n"),
                    private$matrix_to_character(cxn_no_w))
@@ -910,7 +913,7 @@ network <-  R6::R6Class("network",
 
       if (sum(w_dim_lay_dim) < length(w_dim_lay_dim))
         stop(paste("dims of weights and layers are inconsistent. Check the
-                   following row(s) and column(s) ([row, column]) in inital
+                   following row(s) and column(s) ([row, column]) in initial
                    weight matrix and number of units in the corresponding
                    layers.", "\n"), private$matrix_to_character(w_dim_lay_dim))
     },
@@ -978,12 +981,12 @@ network <-  R6::R6Class("network",
     #
     # get_dwt
     #
-    # get weight cahnges with the "check mark" function in XCAL
+    # get weight changes with the "check mark" function in XCAL
     #
     # x vector of abscissa values, this is the hebbian short term activation of
     # receiving and sending unit
     #
-    # th vector of threshold values with the same size as x, this is either the
+    # the vector of threshold values with the same size as x, this is either the
     # hebbian medium term activation of receiving and sending unit or the long
     # term receiving unit activation
     #
@@ -1000,7 +1003,8 @@ network <-  R6::R6Class("network",
     #
     # extracts weights for one connection
     #
-    # cxn: cxn matrix (receiving is rows, sending is columns, value is strength)
+    # cxn: connection matrix (receiving is rows, sending is columns, value is
+    # strength)
     #
     # lower: lower index to extract column, which corresponds to the sending
     # layer's first unit
@@ -1117,7 +1121,7 @@ network <-  R6::R6Class("network",
     dim_lays = NULL,
     cxn = NULL,
     w_init = NULL,
-    n_lays = NULL,  # number of layers (number of objs in "layers")
+    n_lays = NULL,  # number of layers
     n_units_in_net = NULL,
     n_units_in_lays = NULL,
 
@@ -1129,21 +1133,22 @@ network <-  R6::R6Class("network",
     g_i_gain = 2,
     #dependent
     #m1 = NULL, # the slope in the left part of XCAL's "check mark"
-    cxn_greater_zero = matrix(), # binary version of cxn
-    # number of units of receiving layer in cxn matrix
+    cxn_greater_zero = matrix(), # binary version of connection
+    # number of units of receiving layer in connection matrix
     n_units_in_snd_lays = matrix(),
-    # number of units of sending layer in cxn matrix
+    # number of units of sending layer in connection matrix
     n_units_in_rcv_lays = matrix(),
     w_index_low = matrix(), # lower index to extract weights from layer matrix
-    # in cxn format
+    # in connection format
     w_index_up = matrix(), # upper index to extract weights from layer matrix in
-    # cxn format
+    # connection format
     w_init_empty = NULL,
     ext_inputs = NULL,
     has_layer_ext_input = NULL,
-    # in leabra docu, this constant value can be used instead instead of
-    # computing, but note that it is not needed for output layers and for purely
-    # self-organized layers it will reduce amount of learning substantially.
+    # In Leabra documentation, this constant value can be used instead instead
+    # of computing, but note that it is not needed for output layers and for
+    # purely self-organized layers it will reduce amount of learning
+    # substantially.
     avg_l_lrn = 0.0004
   )
 )
