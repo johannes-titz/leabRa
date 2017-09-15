@@ -14,16 +14,16 @@ Object of \code{\link{R6Class}} with methods for calculating neuron
 }
 \description{
 This class simulates a biologically realistic neuron (also called unit) in
-the Lebra framework. When you use the layer class, you will see that a
+the Leabra framework. When you use the layer class, you will see that a
 \link{layer} object has a variable (field) \code{units}, which is a list of
 unit objects.
 }
 \section{Fields}{
 
 \describe{
-\item{\code{activation}}{Percentage activation ("firing rate") of the unit, which is sent
-to other units, think of it as a percentage of how many neurons are active
-in a microcolumn of 100 neurons.}
+\item{\code{activation}}{Percentage activation ("firing rate") of the unit, which is
+sent to other units, think of it as a percentage of how many neurons are
+active in a microcolumn of 100 neurons.}
 
 \item{\code{avg_s}}{Short-term running average activation, integrates over avg_ss (a
 private variable, which integrates over activation), represents plus phase
@@ -52,7 +52,8 @@ a layer, this value will be 1.}
   feedforward and feedback inhibition. See \link{layer} cycle method.
 
     \describe{
-      \item{\code{g_e_raw}}{Raw excitatory conductance. The actual excitatory conductance will incrementally approach this value with every cycle.}
+      \item{\code{g_e_raw}}{Raw excitatory conductance. The actual excitatory
+      conductance will incrementally approach this value with every cycle.}
 
       \item{\code{g_i}}{Inhibitory conductance.}
       }
@@ -72,17 +73,21 @@ a layer, this value will be 1.}
   happens before the weights are changed in the network (after the plus
   phase), and not every cycle.}
 
-  \item{\code{get_vars(show_dynamics = T, show_constants = F)}}{Returns a
-  data frame with 1 row with the current state of all the variables of the
-  unit. You can choose whether you want dynamic values and / or constant
-  values. This might be useful if you want to analyse what happens in a unit,
-  which would otherwise not be possible, because most of the variables
-  (fields) are private in this class.
+  \item{\code{get_vars(show_dynamics = TRUE, show_constants =
+  FALSE)}}{Returns a data frame with 1 row with the current state of all the
+  variables of the unit. You can choose whether you want dynamic values and /
+  or constant values. This might be useful if you want to analyse what
+  happens in a unit, which would otherwise not be possible, because most of
+  the variables (fields) are private in this class.
 
     \describe{
-      \item{\code{show_dynamics = T}}{Should dynamics values be shown?}
+      \item{\code{show_dynamics}}{Should dynamic values be shown? Default is
+      TRUE
+      }
 
-      \item{\code{show_constants = F}}{Should constant values be shown?}
+      \item{\code{show_constants}}{Should constant values be shown? Default
+      is FALSE
+      }
     }
   }
 }

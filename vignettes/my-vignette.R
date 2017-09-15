@@ -21,15 +21,12 @@ inputs_plus <- net$create_inputs(which_layers = c(1, 3),
                                  prop_active = .3)
 
 ## ------------------------------------------------------------------------
-inputs_minus <- lapply(inputs_plus, function(x) {x[3] <- list(NULL); return(x)})
+inputs_minus <- lapply(inputs_plus, function(x) replace(x, 3, list(NULL)))
 
 ## ------------------------------------------------------------------------
-n_epochs <- 2
+n_epochs <- 10
 outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
-                                                                 inputs_plus))#,
-                                                                 #lrate = 0.5))
-w0 <- net$get_weights()
-net$set_weights(w0)
+                                                                 inputs_plus))
 
 ## ------------------------------------------------------------------------
 mad <- net$mad_per_epoch(outs, inputs_plus, 3)
@@ -37,17 +34,23 @@ mad <- net$mad_per_epoch(outs, inputs_plus, 3)
 ## ---- fig.height=4, fig.show='hold', fig.width=6-------------------------
 plot(mad, axes = F, pch = 16, family = "serif", type = "b",
      xlab = "epoch [#]",
-     ylab = "mean absolute deviation [activation]",
-     ylim = c(min(mad), max(mad)))
+     ylab = "mean absolute distance [activation]",
+     ylim = c(round(min(mad), 2), round(max(mad + 0.01), 2)))
 axis(1, at = seq(length(mad)), tick = T, family = "serif")
 axis(2, at = seq(0, 1, 0.05), labels = seq(0, 1, 0.05), tick = T,
      family = "serif", las = 2)
 
 ## ------------------------------------------------------------------------
-w_init_fun = function(x) 0.3 + 0.4 * runif(x)
+w_init_fun = function(x) runif(x, 0.3, 0.7)
 
 ## ------------------------------------------------------------------------
-net <- network$new(dim_lays, connections, w_init_fun = function(x) rnorm(x, mean = 0.6, sd = 0.1))
+net <- network$new(dim_lays, connections,
+                   w_init_fun = function(x) rnorm(x, mean = 0.6, sd = 0.1))
+
+## ------------------------------------------------------------------------
+all_weights <- net$get_weights()
+all_weights
+all_weights[3, 2]
 
 ## ------------------------------------------------------------------------
 set.seed(22071904)
@@ -69,8 +72,8 @@ connections <- matrix(c(0, 0,
 ## ------------------------------------------------------------------------
 run_sim <- function(dim_lays, connections, inputs){
   net <- network$new(dim_lays, connections)
-  net$learn_self_organized(inputs, lrate = 0.8)
-  net$test_inputs(inputs)
+  net$learn_self_organized(inputs, random_order = TRUE)
+  return(net$test_inputs(inputs))
 }
 
 ## ---- message=FALSE------------------------------------------------------
@@ -81,23 +84,27 @@ outs <- lapply(seq(n_runs), function(x) run_sim(dim_lays, connections, inputs))
 outs_layer_two <- lapply(outs, function(x) lapply(x, function(y) y[[2]]))
 outs_layer_two <- lapply(outs_layer_two, function(x) do.call(rbind, x))
 outs_layer_two <- lapply(outs_layer_two, round, 2)
-round(outs_layer_two[[1]], 2)
 
 ## ------------------------------------------------------------------------
-set_won <- function(matrix){
-  t(apply(matrix, 1, function(x) {x[-which.max(x)] <- 0; x}))
-}
-
-set_won2 <- function(matrix){
-  t(apply(matrix, 1, function(x) {x[which.max(x)] <- 1; x}))
-}
-
-outs_layer_two <- lapply(outs_layer_two, set_won)
-outs_layer_two <- lapply(outs_layer_two, set_won2)
+outs_layer_two[[3]]
 
 ## ------------------------------------------------------------------------
-dists <- lapply(outs_layer_two, dist)
-dists <- lapply(dists, function(x) {x[x != 0] <- 1; x})
+outs_layer_two[[1]]
+
+## ------------------------------------------------------------------------
+apply_threshold_on_row <- function(row){
+  row[-which.max(row)] <- 0
+  row[which.max(row)] <- 1
+  return(row)
+}
+
+outs_layer_two <- lapply(outs_layer_two,
+                         function(x) t(apply(x, 1, apply_threshold_on_row)))
+
+outs_layer_two[[1]]
+
+## ------------------------------------------------------------------------
+dists <- lapply(outs_layer_two, dist, method = "binary")
 dists[[1]]
 
 ## ------------------------------------------------------------------------
@@ -109,6 +116,7 @@ mean_dists
 colnames(mean_dists) <- rownames(animals)
 rownames(mean_dists) <- rownames(animals)
 
-## ---- fig.height=5, fig.width=5------------------------------------------
-plot(hclust(as.dist(mean_dists)))
+## ---- fig.height=4, fig.width=6------------------------------------------
+plot(hclust(as.dist(mean_dists)), main = "", sub = "", xlab = "",
+     ylab = "Distance")
 

@@ -17,7 +17,7 @@ Class to simulate a biologically realistic network of neurons
 (\code{\link{unit}s}) organized in \code{\link{layer}s}
 }
 \details{
-This class simulates a biologically realistic artifical neuronal network in
+This class simulates a biologically realistic artificial neuronal network in
 the lebra framework (e.g. O'Reilly et al., 2016). It consists of several
 \code{\link{layer}} objects in the variable (field) \code{layers} and some
 network-specific variables.
@@ -35,143 +35,206 @@ should change when the method \code{chg_wt()} is called.}
 
 \describe{
   \item{\code{new(dim_lays, cxn, g_i_gain = rep(2, length(dim_lays)),
-  w_init_fun = function(x) 0.3 + 0.4 * runif(x), w_init = NULL)}}{Creates an
+  w_init_fun = function(x) runif(x, 0.3, 0.7), w_init = NULL)}}{Creates an
   object of this class with default parameters.
+    \describe{
+      \item{\code{dim_lays}}{List of number pairs for rows and columns of the
+      layers, e.g. \code{list(c(5, 5), c(10, 10), c(5, 5))} for a 25 x 100 x
+      25 network.
+      }
 
-    \code{dim_lays} List of number pairs for rows and columns of the layers,
-    e.g. \code{list(c(5, 5), c(10, 10), c(5, 5))} for a 25 x 100 x 25
-    network.
+      \item{\code{cxn}}{Matrix specifying connection strength between layers,
+      if layer j sends projections to layer i, then \code{cxn[i, j] =
+      strength > 0} and 0 otherwise. Strength specifies the relative strength
+      of that connection with respect to the other projections to layer i.
+      }
 
-    \code{cxn} Matrix specifying connection strength between layers, if layer
-    j sends projections to layer i, then \code{cxn[i, j] = strength > 0} and
-    0 otherwise. Strength specifies the relative strength of that connection
-    with respect to the other projections to layer i.
+      \item{\code{g_i_gain}}{Vector of inhibitory conductance gain values for
+      every layer. This comes in handy to control overall level of inhibition
+      of specific layers. Default is 2 for every layer.
+      }
 
-    \code{g_i_gain} Vector of inhibitory conductance gain values for every
-    layer. This comes in handy to control overall level of inhibition of
-    specific layers. Default is 2 for every layer.
+      \item{\code{w_init_fun}}{Function that specifies how random weights
+      should be created, default value is to generate weights between 0.3 and
+      0.7 from a uniform distribution. It is close to 0.5 because the weights
+      are contrast enhanced internally, so will actually be in a wider range.
+      }
 
-    \code{w_init_fun} Function that specifies how random weights
-    should be created, default value is to generate weights between
-    0.3 and 0.7 from a uniform distribution. It is close to 0.5 because the
-    weights are contrast enhanced internally, so will actually be in a wider
-    range.
-
-    \code{w_init} Matrix of initial weight matrices (like a cell array in
-    matlab), this is analogous to \code{cxn}, i.e. \code{w_init[i, j]}
-    contains the initial weight matrix for the connection from layer j to i.
-    If you specify a \code{w_init}, \code{w_init_fun} is ignored. You can use
-    this if you want to have full control over the weight matrix.}
+      \item{\code{w_init}}{Matrix of initial weight matrices (like a cell
+      array in matlab), this is analogous to \code{cxn}, i.e. \code{w_init[i,
+      j]} contains the initial weight matrix for the connection from layer j
+      to i.  If you specify a \code{w_init}, \code{w_init_fun} is ignored.
+      You can use this if you want to have full control over the weight
+      matrix.
+      }
+    }
+  }
 
   \item{\code{cycle(ext_inputs, clamp_inp)}}{Iterates one time step
   with the network object with external inputs.
 
-    \code{ext_inputs} A list of matrices; ext_inputs[[i]] is a matrix that
-    for layer i specifies the external input to each of its units. An empty
-    matrix (\code{NULL}) denotes no input to that layer. You can also use a
-    vector instead of a matrix, because the matrix is vectorised anyway.
+    \describe{
+      \item{\code{ext_inputs}}{A list of matrices; ext_inputs[[i]] is a
+      matrix that for layer i specifies the external input to each of its
+      units. An empty matrix (\code{NULL}) denotes no input to that layer.
+      You can also use a vector instead of a matrix, because the matrix is
+      vectorised anyway.
+      }
 
-    \code{clamp_inp} Logical variable; TRUE: external inputs are clamped to
-    the activities of the units in the layers, FALSE: external inputs are
-    summed to excitatory conductance values (note: not to the activation) of
-    the units in the layers.}
+      \item{\code{clamp_inp}}{Logical variable; TRUE: external inputs are
+      clamped to the activities of the units in the layers, FALSE: external
+      inputs are summed to excitatory conductance values (note: not to the
+      activation) of the units in the layers.
+      }
+    }
+  }
 
-  \item{\code{chg_wt(gain_e_lrn)}}{Changes the weights of the entire network
-  with the XCAL learning equation.}
-
-    \code{gain_e_lrn} Gain factor for error driven learning. Default is 1. If
-    you want only self-organized learning, you can set this value to 0. This
-    is done automatically when you call the method learn_self_organized
+  \item{\code{chg_wt()}}{Changes the weights of the entire network with the
+  XCAL learning equation.
+  }
 
   \item{\code{reset(random = F)}}{Sets the activation of all units in all
   layers to 0, and sets all activation time averages to that value. Used to
   begin trials from a random stationary point. The activation values may also
   be set to a random value.
 
-    \code{random} Logical variable, if TRUE set activation randomly between
-    .05 and .95, if FALSE set activation to 0, which is the default.}
+    \describe{
+      \item{\code{random}}{Logical variable, if TRUE set activation randomly
+      between .05 and .95, if FALSE set activation to 0, which is the
+      default.
+      }
+    }
+  }
 
   \item{\code{create_inputs(which_layers, n_inputs, prop_active =
   0.3)}}{Returns a list of length \code{n_inputs} with random input patterns
   (either 0.05, or. 0.95) for the layers specified in \code{which_layers}.
   All other layers will have an input of NULL.
+    \describe{
+      \item{\code{which_layers}}{Vector of layer numbers, for which you want
+      to create random inputs.
+      }
 
-    \code{which_layers} Vector of layer numbers, for which you want to create
-    random inputs.
+      \item{\code{n_inputs}}{Single numeric value, how many inputs should be
+      created.
+      }
 
-    \code{n_inputs} Single numeric value, how many inputs should be created.
-
-    \code{prop_active} Average proportion of active units in the input
-    patterns, default is 0.3.}
+      \item{\code{prop_active}}{Average proportion of active units in the
+      input patterns, default is 0.3.
+      }
+    }
+  }
 
   \item{\code{learn_error_driven(inputs_minus, inputs_plus, lrate = 0.1,
-  n_cycles_minus = 50, n_cycles_plus = 25, show_progress = T)}}{Learns to
+  n_cycles_minus = 50, n_cycles_plus = 25, random_order = FALSE,
+  show_progress = TRUE)}}{Learns to
   associate specific inputs with specific outputs in an error-driven fashion.
 
-    \code{inputs_minus} Inputs for the minus phase (the to be learned output
-    ist not presented).
+    \describe{
+      \item{\code{inputs_minus}}{Inputs for the minus phase (the to be
+      learned output is not presented).
+      }
 
-    \code{inputs_plus} Inputs for the plus phase (the to be learned output is
-    presented).
+      \item{\code{inputs_plus}}{Inputs for the plus phase (the to be learned
+      output is presented).
+      }
 
-    \code{lrate} Learning rate, default is 0.1.
+      \item{\code{lrate}}{Learning rate, default is 0.1.
+      }
 
-    \code{n_cycles_minus} How many cycles to run in the minus phase,
-    default is 50.
+      \item{\code{n_cycles_minus}}{How many cycles to run in the minus phase,
+      default is 50.
+      }
 
-    \code{n_cycles_plus} How many cycles to run in the plus phase,
-    default is 25.
+      \item{\code{n_cycles_plus}}{How many cycles to run in the plus phase,
+      default is 25.
+      }
 
-    \code{show_progress} Whether progress of learning should be shown.}
+      \item{\code{random_order}}{Should the order of stimulus presentation be
+      randomized? Default is FALSE.
+      }
 
-  \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles = 50,
- show_progress = T)}}{Learns to categorize inputs in a self-organized
- fashion.
-
-    \code{inputs} Inputs for cycling.
-
-    \code{lrate} Learning rate, default is 0.1.
-
-    \code{n_cycles} How many cycles to run, default is 50.
-
-    \code{show_progress} Whether progress of learning should be shown.
+      \item{\code{show_progress}}{Whether progress of learning should be
+      shown. Default is TRUE.
+      }
     }
+  }
 
-  \item{\code{test_inputs = function(inputs, n_cycles = 50, show_progress =
- F)}}{Tests inputs without changing the weights (without learning). This is
- usually done after several learning runs.
+ \item{\code{learn_self_organized(inputs, lrate = 0.1, n_cycles = 50,
+ random_order = FALSE, show_progress = TRUE)}}{Learns to categorize inputs in
+ a self-organized fashion.
+    \describe{
+      \item{\code{inputs}}{Inputs for cycling.
+      }
 
-    \code{inputs} Inputs for cycling.
+      \item{\code{lrate}}{Learning rate, default is 0.1.
+      }
 
-    \code{n_cycles} How many cycles to run, default is 50.
+      \item{\code{n_cycles}}{How many cycles to run, default is 50.
+      }
 
-    \code{show_progress} Whether progress of learning should be shown.}
+      \item{\code{random_order}}{Should the order of stimulus presentation be
+      randomized? Default is FALSE.
+      }
+
+      \item{\code{show_progress}}{Whether progress of learning should be
+      shown. Default is TRUE.
+      }
+    }
+  }
+
+   \item{\code{test_inputs = function(inputs, n_cycles = 50, show_progress =
+   FALSE)}}{Tests inputs without changing the weights (without learning).
+   This is usually done after several learning runs.
+
+    \describe{
+      \item{\code{inputs}}{Inputs for cycling.
+      }
+
+      \item{\code{n_cycles}}{How many cycles to run, default is 50.
+      }
+
+      \item{\code{show_progress}}{Whether progress of learning should be
+      shown. Default is FALSE.
+      }
+    }
+  }
 
   \item{\code{mad_per_epoch(outs_per_epoch, inputs_plus,
-  layer)}}{Calculates mean absolute deviation for two lists of activations
+  layer)}}{Calculates mean absolute distance for two lists of activations
   for a specific layer. This can be used to compare whether the network has
   learned what it was supposed to learn.
 
-    \code{outs_per_epoch} Output activations for entire network for each
-    trial for every epoch. This is what the network produced on its own.
+    \describe{
+      \item{\code{outs_per_epoch}}{Output activations for entire network for
+      each trial for every epoch. This is what the network produced on its
+      own.}
 
-    \code{inputs_pluts} Original inputs for the plus phase. This is what the
-    network was supposed to learn.
+      \item{\code{inputs_plus}}{Original inputs for the plus phase. This is
+      what the network was supposed to learn.
+      }
 
-    \code{layer} For which layer to calculate the mean absolute deviation.
-    Usually, this is the "output" layer.}
+      \item{\code{layer}}{Single numeric, for which layer to calculate the
+      mean absolute distance. Usually, this is the "output" layer.
+      }
+    }
+  }
 
   \item{\code{set_weights(weights)}}{Sets new weights for entire network,
   useful to load networks that have already learned and thus very specific
   weights.
-
-  \code{weights} Matrix of matrices (like a cell array in matlab) with new
-  weight values.}
+    \describe{
+      \item{\code{weights}}{Matrix of matrices (like a cell array in matlab)
+      with new weight values.
+      }
+    }
+  }
 
   \item{\code{get_weights()}}{Returns the complete weight matrix, \code{w[i,
   j]} contains the weight matrix for the projections from layer j to layer i.
   Note that this is a matrix of matrices (equivalent to a matlab cell
-  array).}
+  array).
+  }
 
   \item{\code{get_layer_and_unit_vars(show_dynamics = T, show_constants =
   F)}}{Returns a data frame with the current state of all layer and unit
@@ -179,7 +242,18 @@ should change when the method \code{chg_wt()} is called.}
   values and / or constant values. This might be useful if you want to
   analyse what happens in the network overall, which would otherwise not be
   possible, because most of the variables (fields) are private in the layer
-  and unit class.}
+  and unit class.
+
+    \describe{
+      \item{\code{show_dynamics}}{Should dynamic values be shown? Default is
+      TRUE.
+      }
+
+      \item{\code{show_constants}}{Should constant values be shown? Default
+      is FALSE.
+      }
+    }
+  }
 
   \item{\code{get_network_vars(show_dynamics = T, show_constants =
   F)}}{Returns a data frame with 1 row with the current state of the
@@ -189,8 +263,18 @@ should change when the method \code{chg_wt()} is called.}
   of the variables (fields) are private in the network class. There are some
   additional variables in the network class that cannot be extracted this way
   because they are matrices; if it is necessary to extract them, look at the
-  source code.}
+  source code.
 
+    \describe{
+      \item{\code{show_dynamics}}{Should dynamic values be shown? Default is
+      TRUE.
+      }
+
+      \item{\code{show_constants}}{Should constant values be shown? Default
+      is FALSE.
+      }
+    }
+  }
 }
 }
 
@@ -218,8 +302,7 @@ inputs # a list of lists
 
 # first we will need the input for the minus phase (where no correct output
 # is presented; layer 3 is NULL)
-inputs_minus <- lapply(inputs,
-                       function(x) {x[3] <- list(NULL); return(x)})
+inputs_minus <- lapply(inputs, function(x) replace(x, 3, list(NULL)))
 inputs_minus # layer 3 is indeed NULL
 # now we can learn with default parameters; we will run 10 epochs,
 # inputs_plus is equivalent to inputs; the output will be activations after
@@ -233,7 +316,7 @@ output <- lapply(seq(n_epochs),
                                                     lrate = 0.5))
 # let's compare the actual output with what should have been learned we can
 # use the method mad_per_epoch for this; it will calculate the mean absolute
-# deviation for each epoch; we are interested in layer 3
+# distance for each epoch; we are interested in layer 3
 mad <- net$mad_per_epoch(output, inputs, 3)
 # the error should decrease with increasing epoch number
 plot(mad)}
