@@ -8,7 +8,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # todos
-rechtschreibung in docu!
+add git repo?
+Modify DESCRIPTION to add URL and BugReports fields that link to your new GitHub site. For example, dplyr has:
+
+URL: http://github.com/hadley/dplyr
+BugReports: http://github.com/hadley/dplyr/issues
 
 test building with cran options, go through karl broman guide
 
