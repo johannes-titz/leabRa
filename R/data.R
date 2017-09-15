@@ -2,10 +2,12 @@
 #'
 #' A small dataset describing 10 animals represented by 6 features that are
 #' either present (0.95) or absent (0.05) for demonstrating self-organized
-#' learning in artifical neural networks.
+#' learning in artificial neural networks.
 #'
-#' @format A data frame with 10 rows and 6 variables describing 10 different animals with 6 feature vectors that are either present (0.95) or absent (0.05).
+#' @format A data frame with 10 rows and 6 variables describing 10 different
+#' animals with 6 feature vectors that are either present (0.95) or absent
+#' (0.05).
 #'
 #' @source Knight, K. (1990). Connectionist ideas and algorithms.
-#'   \emph{Communications of the ACM}, \emph{33}(11), 59–74.
+#' \emph{Communications of the ACM}, \emph{33}(11), 59–74.
 "animals"

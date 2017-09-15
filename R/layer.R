@@ -3,9 +3,10 @@ NULL
 
 #' Leabra layer class
 #'
-#' This class simulates a biologically realistic layer of neurons in the lebra
-#' framework. It consists of several \code{\link{unit}} objects in the variable
-#' (field) \code{units} and some layer-specific variables.
+#' This class simulates a biologically realistic layer of neurons in the
+#' Leabra framework. It consists of several \code{\link{unit}} objects
+#' in the variable (field) \code{units} and some layer-specific
+#' variables.
 #'
 #' @references O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
 #'   Contributors (2016). Computational Cognitive Neuroscience. Wiki Book, 3rd
@@ -48,7 +49,7 @@ NULL
 #' l$get_unit_scaled_acts()
 #'
 #' @field units A list with all \code{\link{unit}} objects of the layer.
-#' @field avg_act The average activiation of all units in the layer
+#' @field avg_act The average activation of all units in the layer
 #' (this is an active binding).
 #' @field n Number of units in layer.
 #' @field weights A receiving x sending weight matrix, where the receiving units
@@ -110,7 +111,7 @@ NULL
 #'
 #'   \item{\code{clamp_cycle(activations)}}{Iterates one time step with layer
 #'   object with clamped activations, meaning that activations are
-#'   instantenously set without time integration.
+#'   instantaneously set without time integration.
 #'
 #'     \describe{
 #'       \item{\code{activations}}{Activations you want to clamp to the units in
@@ -253,7 +254,7 @@ layer <- R6::R6Class("layer",
       avg_m <- sapply(self$units, function(x) x$avg_m)
       avg_l <- sapply(self$units, function(x) x$avg_l)
 
-      # obatining avg_s_with_m
+      # obtaining avg_s_with_m
       avg_s_with_m <- private$m_avg_prc_in_s_avg * avg_m +
         (1 - private$m_avg_prc_in_s_avg) * avg_s
 

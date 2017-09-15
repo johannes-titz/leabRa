@@ -4,7 +4,7 @@ NULL
 #' Leabra unit (neuron) class
 #'
 #' This class simulates a biologically realistic neuron (also called unit) in
-#' the Lebra framework. When you use the layer class, you will see that a
+#' the Leabra framework. When you use the layer class, you will see that a
 #' \link{layer} object has a variable (field) \code{units}, which is a list of
 #' unit objects.
 #'
@@ -55,9 +55,9 @@ NULL
 #' # add conductance g_e to plot, should approach g_e_raw
 #' lines(result$g_e, type = "b", col = "blue")
 #'
-#' @field activation Percentage activation ("firing rate") of the unit, which is sent
-#'   to other units, think of it as a percentage of how many neurons are active
-#'   in a microcolumn of 100 neurons.
+#' @field activation Percentage activation ("firing rate") of the unit, which is
+#'   sent to other units, think of it as a percentage of how many neurons are
+#'   active in a microcolumn of 100 neurons.
 #' @field avg_s Short-term running average activation, integrates over avg_ss (a
 #'   private variable, which integrates over activation), represents plus phase
 #'   learning signal.
@@ -80,7 +80,8 @@ NULL
 #'   feedforward and feedback inhibition. See \link{layer} cycle method.
 #'
 #'     \describe{
-#'       \item{\code{g_e_raw}}{Raw excitatory conductance. The actual excitatory conductance will incrementally approach this value with every cycle.}
+#'       \item{\code{g_e_raw}}{Raw excitatory conductance. The actual excitatory
+#'       conductance will incrementally approach this value with every cycle.}
 #'
 #'       \item{\code{g_i}}{Inhibitory conductance.}
 #'       }
