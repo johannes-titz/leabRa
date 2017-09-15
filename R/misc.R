@@ -10,7 +10,6 @@
     devtools.name = "Johannes Titz",
     devtools.desc.author =
       '"Johannes Titz <johannes.titz@gmail.com> [aut, cre]"',
-    #devtools.desc.author = '"Sergio Verduzco-Flores <> [aut]"',
     devtools.desc.license = "GPL-3",
     devtools.desc.suggests = NULL,
     devtools.desc = list()
