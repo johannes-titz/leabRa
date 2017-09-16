@@ -8,7 +8,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # todos
-add git repo?
+add git repo? yes! do that, than you can follow release in r-pkgs
+
+* More clearly identified the copyright holders in the DESCRIPTION
+  and LICENSE files.
+  
 Modify DESCRIPTION to add URL and BugReports fields that link to your new GitHub site. For example, dplyr has:
 
 URL: http://github.com/hadley/dplyr
