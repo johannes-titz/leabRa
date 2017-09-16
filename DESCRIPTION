@@ -4,19 +4,21 @@ Title: Implementation of the artifical neural networks algorithm Leabra
 Version: 0.1.0
 Author: Johannes Titz
 Maintainer: Johannes Titz <johannes.titz@gmail.com>
-Description: This is a port of Leabra (local error driven and associative 
-    biologically realistic algorithm) for R. You can construct
-    artifical neural networks that are biologically realistic and can let them 
-    learn supervised or unsupervised within one single framework. For more 
-    general (not R specific) information on the algorithm Leabra see 
+Description: This package is an R implementation of Leabra (local error driven
+    and associative biologically realistic algorithm). You can construct
+    artifical neural networks that are biologically realistic and balance
+    supervised and unsupervised learning within a single framework. It is based
+    on the Matlab version by Sergio Verduzco-Flores (under LGPL), which in turn
+    was based on the description of the algorithm by Randy O'Reilly. For more
+    general (not R specific) information on the algorithm Leabra see
     https://grey.colorado.edu/emergent/index.php/Leabra.
 Depends: R (>= 2.10)
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports:
-    plyr,
-    R6
+    plyr (>= 1.8.4),
+    R6 (>= 2.2.1)
 Collate: 
     'data.R'
     'misc.R'
