@@ -9,9 +9,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # todos
 add git repo? yes! do that, than you can follow release in r-pkgs
-
-* More clearly identified the copyright holders in the DESCRIPTION
-  and LICENSE files.
   
 Modify DESCRIPTION to add URL and BugReports fields that link to your new GitHub site. For example, dplyr has:
 
@@ -19,8 +16,6 @@ URL: http://github.com/hadley/dplyr
 BugReports: http://github.com/hadley/dplyr/issues
 
 test building with cran options, go through karl broman guide
-
-Sergio schreiben
 
 https://cran.r-project.org/web/packages/URL_checks.html
 
@@ -34,6 +29,8 @@ Preferably, an ‘Authors@R’ would be used with ‘ctb’ roles for the author
 Where copyrights are held by an entity other than the package authors, this should preferably be indicated via ‘cph’ roles in the ‘Authors@R’ field, or using a ‘Copyright’ field (if necessary referring to an inst/COPYRIGHTS file).
 
 Trademarks must be respected.
+
+for later:
 
 1. add type of layer for avg_l_lrn, it is 0.0004 on default, but 0 for output layers (they do not need self-organized learning).
 
