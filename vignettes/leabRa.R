@@ -25,8 +25,9 @@ inputs_minus <- lapply(inputs_plus, function(x) replace(x, 3, list(NULL)))
 
 ## ------------------------------------------------------------------------
 n_epochs <- 10
-outs <- lapply(seq(n_epochs), function(x) net$learn_error_driven(inputs_minus,
-                                                                 inputs_plus))
+outs <- lapply(seq(n_epochs), function(x) 
+  net$learn_error_driven(inputs_minus,
+                         inputs_plus))
 
 ## ------------------------------------------------------------------------
 mad <- net$mad_per_epoch(outs, inputs_plus, 3)
@@ -100,7 +101,6 @@ apply_threshold_on_row <- function(row){
 
 outs_layer_two <- lapply(outs_layer_two,
                          function(x) t(apply(x, 1, apply_threshold_on_row)))
-
 outs_layer_two[[1]]
 
 ## ------------------------------------------------------------------------
