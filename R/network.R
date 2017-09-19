@@ -7,7 +7,7 @@ NULL
 #' (\code{\link{unit}s}) organized in \code{\link{layer}s}
 #'
 #' This class simulates a biologically realistic artificial neuronal network in
-#' the lebra framework (e.g. O'Reilly et al., 2016). It consists of several
+#' the Leabra framework (e.g. O'Reilly et al., 2016). It consists of several
 #' \code{\link{layer}} objects in the variable (field) \code{layers} and some
 #' network-specific variables.
 #'
@@ -17,7 +17,7 @@ NULL
 #'
 #' @references Have also a look at
 #'   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
-#'   link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
+#'   link to the MATLAB code) and \url{https://en.wikipedia.org/wiki/Leabra}
 #'
 #' @docType class
 #' @importFrom R6 R6Class
@@ -103,7 +103,7 @@ NULL
 #'       }
 #'
 #'       \item{\code{w_init}}{Matrix of initial weight matrices (like a cell
-#'       array in matlab), this is analogous to \code{cxn}, i.e. \code{w_init[i,
+#'       array in MATLAB), this is analogous to \code{cxn}, i.e. \code{w_init[i,
 #'       j]} contains the initial weight matrix for the connection from layer j
 #'       to i.  If you specify a \code{w_init}, \code{w_init_fun} is ignored.
 #'       You can use this if you want to have full control over the weight
@@ -120,7 +120,7 @@ NULL
 #'       matrix that for layer i specifies the external input to each of its
 #'       units. An empty matrix (\code{NULL}) denotes no input to that layer.
 #'       You can also use a vector instead of a matrix, because the matrix is
-#'       vectorised anyway.
+#'       vectorized anyway.
 #'       }
 #'
 #'       \item{\code{clamp_inp}}{Logical variable; TRUE: external inputs are
@@ -266,7 +266,7 @@ NULL
 #'   useful to load networks that have already learned and thus very specific
 #'   weights.
 #'     \describe{
-#'       \item{\code{weights}}{Matrix of matrices (like a cell array in matlab)
+#'       \item{\code{weights}}{Matrix of matrices (like a cell array in MATLAB)
 #'       with new weight values.
 #'       }
 #'     }
@@ -274,7 +274,7 @@ NULL
 #'
 #'   \item{\code{get_weights()}}{Returns the complete weight matrix, \code{w[i,
 #'   j]} contains the weight matrix for the projections from layer j to layer i.
-#'   Note that this is a matrix of matrices (equivalent to a matlab cell
+#'   Note that this is a matrix of matrices (equivalent to a MATLAB cell
 #'   array).
 #'   }
 #'
@@ -282,7 +282,7 @@ NULL
 #'   F)}}{Returns a data frame with the current state of all layer and unit
 #'   variables. Every row is a unit. You can choose whether you want dynamic
 #'   values and / or constant values. This might be useful if you want to
-#'   analyse what happens in the network overall, which would otherwise not be
+#'   analyze what happens in the network overall, which would otherwise not be
 #'   possible, because most of the variables (fields) are private in the layer
 #'   and unit class.
 #'
@@ -300,7 +300,7 @@ NULL
 #'   \item{\code{get_network_vars(show_dynamics = T, show_constants =
 #'   F)}}{Returns a data frame with 1 row with the current state of the
 #'   variables in the network. You can choose whether you want dynamic values
-#'   and / or constant values. This might be useful if you want to analyse what
+#'   and / or constant values. This might be useful if you want to analyze what
 #'   happens in a network, which would otherwise not be possible, because some
 #'   of the variables (fields) are private in the network class. There are some
 #'   additional variables in the network class that cannot be extracted this way
@@ -1088,7 +1088,7 @@ network <-  R6::R6Class("network",
 
     # m_mapply
     #
-    # mapply version for matrix of matrices (matlab cell arrays), returns a
+    # mapply version for matrix of matrices (MATLAB cell arrays), returns a
     # matrix
     m_mapply = function(fun, x, y){
       matrix(mapply(fun, x, y), ncol = ncol(x))

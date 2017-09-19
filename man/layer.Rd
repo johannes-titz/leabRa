@@ -80,7 +80,7 @@ a layer on your own, without the network class).}
        }
 
        \item{\code{ext_input}}{Vector with inputs not coming from another
-       layer, with length equalling the number of units in this layer. If
+       layer, with length equal to the number of units in this layer. If
        empty (\code{NULL}), no external inputs are processed. If the external
        inputs are not clamped, this is actually an excitatory conductance
        value, which is added to the conductance produced by the internal
@@ -135,7 +135,7 @@ a layer on your own, without the network class).}
   FALSE)}}{Returns a data frame with the current state of all unit variables
   in the layer. Every row is a unit. You can choose whether you want dynamic
   values and / or constant values. This might be useful if you want to
-  analyse what happens in units of a layer, which would otherwise not be
+  analyze what happens in units of a layer, which would otherwise not be
   possible, because most of the variables (fields) are private in the unit
   class.
     \describe{
@@ -152,7 +152,7 @@ a layer on your own, without the network class).}
   \item{\code{get_layer_vars(show_dynamics = TRUE, show_constants =
   FALSE)}}{Returns a data frame with 1 row with the current state of the
   variables in the layer. You can choose whether you want dynamic values and
-  / or constant values. This might be useful if you want to analyse what
+  / or constant values. This might be useful if you want to analyze what
   happens in a layer, which would otherwise not be possible, because some of
   the variables (fields) are private in the layer class.
 
@@ -201,6 +201,6 @@ O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
 
 Have also a look at
   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
-  link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
+  link to the MATLAB code) and \url{https://en.wikipedia.org/wiki/Leabra}
 }
 \keyword{data}

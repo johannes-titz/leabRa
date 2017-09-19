@@ -18,7 +18,7 @@ Class to simulate a biologically realistic network of neurons
 }
 \details{
 This class simulates a biologically realistic artificial neuronal network in
-the lebra framework (e.g. O'Reilly et al., 2016). It consists of several
+the Leabra framework (e.g. O'Reilly et al., 2016). It consists of several
 \code{\link{layer}} objects in the variable (field) \code{layers} and some
 network-specific variables.
 }
@@ -61,7 +61,7 @@ should change when the method \code{chg_wt()} is called.}
       }
 
       \item{\code{w_init}}{Matrix of initial weight matrices (like a cell
-      array in matlab), this is analogous to \code{cxn}, i.e. \code{w_init[i,
+      array in MATLAB), this is analogous to \code{cxn}, i.e. \code{w_init[i,
       j]} contains the initial weight matrix for the connection from layer j
       to i.  If you specify a \code{w_init}, \code{w_init_fun} is ignored.
       You can use this if you want to have full control over the weight
@@ -78,7 +78,7 @@ should change when the method \code{chg_wt()} is called.}
       matrix that for layer i specifies the external input to each of its
       units. An empty matrix (\code{NULL}) denotes no input to that layer.
       You can also use a vector instead of a matrix, because the matrix is
-      vectorised anyway.
+      vectorized anyway.
       }
 
       \item{\code{clamp_inp}}{Logical variable; TRUE: external inputs are
@@ -224,7 +224,7 @@ should change when the method \code{chg_wt()} is called.}
   useful to load networks that have already learned and thus very specific
   weights.
     \describe{
-      \item{\code{weights}}{Matrix of matrices (like a cell array in matlab)
+      \item{\code{weights}}{Matrix of matrices (like a cell array in MATLAB)
       with new weight values.
       }
     }
@@ -232,7 +232,7 @@ should change when the method \code{chg_wt()} is called.}
 
   \item{\code{get_weights()}}{Returns the complete weight matrix, \code{w[i,
   j]} contains the weight matrix for the projections from layer j to layer i.
-  Note that this is a matrix of matrices (equivalent to a matlab cell
+  Note that this is a matrix of matrices (equivalent to a MATLAB cell
   array).
   }
 
@@ -240,7 +240,7 @@ should change when the method \code{chg_wt()} is called.}
   F)}}{Returns a data frame with the current state of all layer and unit
   variables. Every row is a unit. You can choose whether you want dynamic
   values and / or constant values. This might be useful if you want to
-  analyse what happens in the network overall, which would otherwise not be
+  analyze what happens in the network overall, which would otherwise not be
   possible, because most of the variables (fields) are private in the layer
   and unit class.
 
@@ -258,7 +258,7 @@ should change when the method \code{chg_wt()} is called.}
   \item{\code{get_network_vars(show_dynamics = T, show_constants =
   F)}}{Returns a data frame with 1 row with the current state of the
   variables in the network. You can choose whether you want dynamic values
-  and / or constant values. This might be useful if you want to analyse what
+  and / or constant values. This might be useful if you want to analyze what
   happens in a network, which would otherwise not be possible, because some
   of the variables (fields) are private in the network class. There are some
   additional variables in the network class that cannot be extracted this way
@@ -329,6 +329,6 @@ O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
 
 Have also a look at
   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
-  link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
+  link to the MATLAB code) and \url{https://en.wikipedia.org/wiki/Leabra}
 }
 \keyword{data}
