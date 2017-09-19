@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 
 # leabRa
 
-This package provides the Leabra artificial neural network algorithm (O’Reilly, 1996) for R. Leabra stands for “local error driven and associative biologically realistic algorithm.” It is the Rolls Royce of artificial neural networks because it combines error driven learning and self organized learning in an elegant way, while focusing on a biologically plausible learning rule. If you have never heard of Leabra, you should read about it first. A good place to start is the computational cognitive neuroscience book (Part I), available at https://grey.colorado.edu/CompCogNeuro/index.php/CCNBook/Main (O’Reilly et al., 2016).
+This package provides the Leabra artificial neural network algorithm (O’Reilly, 1996) for R. Leabra stands for “local error driven and associative biologically realistic algorithm”. It is the Rolls Royce of artificial neural networks because it combines error driven learning and self organized learning in an elegant way, while focusing on a biologically plausible learning rule. If you have never heard of Leabra, you should read about it first. A good place to start is the computational cognitive neuroscience book (Part I), available at https://grey.colorado.edu/CompCogNeuro/index.php/CCNBook/Main (O’Reilly et al., 2016).
 
 ## Installation
 <!--via CRAN: 
