@@ -12,5 +12,5 @@ networks: \link{unit}, \link{layer} and \link{network}.
 \details{
 Note that the classes in this package are \code{\link{R6Class}} classes.
 
-For further information check out the vignette.
+For further information check out the vignette with vignette("leabRa").
 }
