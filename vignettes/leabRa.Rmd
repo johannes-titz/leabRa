@@ -266,4 +266,4 @@ O'Reilly, R. C. (1996). *The Leabra Model of Neural Interactions and Learning in
 
 O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and Contributors (2016). *Computational Cognitive Neuroscience*. Wiki Book, 3rd (partial) Edition. URL: http://ccnbook.colorado.edu
 
-Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). Learning representations by back-propagating errors. *Nature*. *323*(6088): 533–536. doi:10.1038/323533a0.
+Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). Learning representations by back-propagating errors. *Nature*. *323*(6088): 533–536. URL: http://dx.doi.org/10.1038/323533a0.
