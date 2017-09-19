@@ -2,7 +2,7 @@ This is my first submission.
 
 ## Test environments
 * local arch linux, R 3.4.1
-* win-builder (devel and release) 
+* win-builder (devel 2017-09-12 r73242 and release)
 
 ## R CMD check results
 There were no ERRORs or WARNINGs.
