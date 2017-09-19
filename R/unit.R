@@ -14,7 +14,7 @@ NULL
 #'
 #' @references Have also a look at
 #'   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
-#'   link to the matlab code) and \url{https://en.wikipedia.org/wiki/Leabra}
+#'   link to the MATLAB code) and \url{https://en.wikipedia.org/wiki/Leabra}
 #'
 #' @docType class
 #' @importFrom R6 R6Class
@@ -104,7 +104,7 @@ NULL
 #'   \item{\code{get_vars(show_dynamics = TRUE, show_constants =
 #'   FALSE)}}{Returns a data frame with 1 row with the current state of all the
 #'   variables of the unit. You can choose whether you want dynamic values and /
-#'   or constant values. This might be useful if you want to analyse what
+#'   or constant values. This might be useful if you want to analyze what
 #'   happens in a unit, which would otherwise not be possible, because most of
 #'   the variables (fields) are private in this class.
 #'
