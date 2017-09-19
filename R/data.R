@@ -1,4 +1,4 @@
-#' Small example data set for self-organized artifical neural networks
+#' Small example data set for self-organized artificial neural networks
 #'
 #' A small dataset describing 10 animals represented by 6 features that are
 #' either present (1) or absent (0) for demonstrating self-organized learning in
