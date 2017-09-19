@@ -309,7 +309,7 @@ inputs_minus # layer 3 is indeed NULL
 # each trial for the wohle network; this might take a while depending on your
 # system
 n_epochs <- 10
-\donttest{
+\dontrun{
 output <- lapply(seq(n_epochs),
                  function(x) net$learn_error_driven(inputs_minus,
                                                     inputs,
