@@ -14,9 +14,10 @@ Installation
 #install.pacakges("leabRa")
 ```
 -->
-via git (and with building the vignette; this takes a while)
+via devtools and git (and with building the vignette; this takes a while)
 
 ``` r
+install.packages("devtools")
 devtools::install_github("johannes-titz/leabRa", build_vignettes = TRUE)
 ```
 
@@ -31,7 +32,6 @@ To see how it works, have a look at the vignette:
 
 ``` r
 vignette("leabRa")
-#> starting httpd help server ... done
 ```
 
 And the help files:

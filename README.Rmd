@@ -25,8 +25,9 @@ This package provides the Leabra artificial neural network algorithm (O’Reilly
 #install.pacakges("leabRa")
 ```
 -->
-via git (and with building the vignette; this takes a while)
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+via devtools and git (and with building the vignette; this takes a while)
+```{r, eval=FALSE, message=FALSE, warning=FALSE}
+install.packages("devtools")
 devtools::install_github("johannes-titz/leabRa", build_vignettes = TRUE)
 ``` 
 
@@ -37,7 +38,7 @@ library(leabRa)
 ```
 
 To see how it works, have a look at the vignette:
-```{r}
+```{r, message=FALSE, warning=FALSE}
 vignette("leabRa")
 ```
 
