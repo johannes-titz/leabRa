@@ -132,6 +132,6 @@ O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
 
 Have also a look at
   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
-  link to the MATLAB code) and \url{https://en.wikipedia.org/wiki/Leabra}
+  link to the 'MATLAB' code) and \url{https://en.wikipedia.org/wiki/Leabra}
 }
 \keyword{data}

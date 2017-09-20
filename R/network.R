@@ -17,7 +17,7 @@ NULL
 #'
 #' @references Have also a look at
 #'   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
-#'   link to the MATLAB code) and \url{https://en.wikipedia.org/wiki/Leabra}
+#'   link to the 'MATLAB' code) and \url{https://en.wikipedia.org/wiki/Leabra}
 #'
 #' @docType class
 #' @importFrom R6 R6Class
@@ -103,11 +103,11 @@ NULL
 #'       }
 #'
 #'       \item{\code{w_init}}{Matrix of initial weight matrices (like a cell
-#'       array in MATLAB), this is analogous to \code{cxn}, i.e. \code{w_init[i,
-#'       j]} contains the initial weight matrix for the connection from layer j
-#'       to i.  If you specify a \code{w_init}, \code{w_init_fun} is ignored.
-#'       You can use this if you want to have full control over the weight
-#'       matrix.
+#'       array in 'MATLAB'), this is analogous to \code{cxn}, i.e.
+#'       \code{w_init[i, j]} contains the initial weight matrix for the
+#'       connection from layer j to i.  If you specify a \code{w_init},
+#'       \code{w_init_fun} is ignored. You can use this if you want to have full
+#'       control over the weight matrix.
 #'       }
 #'     }
 #'   }
@@ -266,15 +266,15 @@ NULL
 #'   useful to load networks that have already learned and thus very specific
 #'   weights.
 #'     \describe{
-#'       \item{\code{weights}}{Matrix of matrices (like a cell array in MATLAB)
-#'       with new weight values.
+#'       \item{\code{weights}}{Matrix of matrices (like a cell array in
+#'       'MATLAB') with new weight values.
 #'       }
 #'     }
 #'   }
 #'
 #'   \item{\code{get_weights()}}{Returns the complete weight matrix, \code{w[i,
 #'   j]} contains the weight matrix for the projections from layer j to layer i.
-#'   Note that this is a matrix of matrices (equivalent to a MATLAB cell
+#'   Note that this is a matrix of matrices (equivalent to a 'MATLAB' cell
 #'   array).
 #'   }
 #'
@@ -1088,7 +1088,7 @@ network <-  R6::R6Class("network",
 
     # m_mapply
     #
-    # mapply version for matrix of matrices (MATLAB cell arrays), returns a
+    # mapply version for matrix of matrices ('MATLAB' cell arrays), returns a
     # matrix
     m_mapply = function(fun, x, y){
       matrix(mapply(fun, x, y), ncol = ncol(x))

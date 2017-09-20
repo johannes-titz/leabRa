@@ -61,11 +61,11 @@ should change when the method \code{chg_wt()} is called.}
       }
 
       \item{\code{w_init}}{Matrix of initial weight matrices (like a cell
-      array in MATLAB), this is analogous to \code{cxn}, i.e. \code{w_init[i,
-      j]} contains the initial weight matrix for the connection from layer j
-      to i.  If you specify a \code{w_init}, \code{w_init_fun} is ignored.
-      You can use this if you want to have full control over the weight
-      matrix.
+      array in 'MATLAB'), this is analogous to \code{cxn}, i.e.
+      \code{w_init[i, j]} contains the initial weight matrix for the
+      connection from layer j to i.  If you specify a \code{w_init},
+      \code{w_init_fun} is ignored. You can use this if you want to have full
+      control over the weight matrix.
       }
     }
   }
@@ -224,15 +224,15 @@ should change when the method \code{chg_wt()} is called.}
   useful to load networks that have already learned and thus very specific
   weights.
     \describe{
-      \item{\code{weights}}{Matrix of matrices (like a cell array in MATLAB)
-      with new weight values.
+      \item{\code{weights}}{Matrix of matrices (like a cell array in
+      'MATLAB') with new weight values.
       }
     }
   }
 
   \item{\code{get_weights()}}{Returns the complete weight matrix, \code{w[i,
   j]} contains the weight matrix for the projections from layer j to layer i.
-  Note that this is a matrix of matrices (equivalent to a MATLAB cell
+  Note that this is a matrix of matrices (equivalent to a 'MATLAB' cell
   array).
   }
 
@@ -329,6 +329,6 @@ O'Reilly, R. C., Munakata, Y., Frank, M. J., Hazy, T. E., and
 
 Have also a look at
   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
-  link to the MATLAB code) and \url{https://en.wikipedia.org/wiki/Leabra}
+  link to the 'MATLAB' code) and \url{https://en.wikipedia.org/wiki/Leabra}
 }
 \keyword{data}

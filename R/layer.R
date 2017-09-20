@@ -14,7 +14,7 @@ NULL
 #'
 #' @references Have also a look at
 #'   \url{https://grey.colorado.edu/emergent/index.php/Leabra} (especially the
-#'   link to the MATLAB code) and \url{https://en.wikipedia.org/wiki/Leabra}
+#'   link to the 'MATLAB' code) and \url{https://en.wikipedia.org/wiki/Leabra}
 #'
 #' @docType class
 #' @importFrom R6 R6Class
