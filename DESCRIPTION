@@ -28,8 +28,7 @@ Collate:
     'leabRa.R'
 RoxygenNote: 6.0.1
 Suggests: knitr,
-    rmarkdown,
-    qgraph
+    rmarkdown
 VignetteBuilder: knitr
 URL: https://github.com/johannes-titz/leabRa
 BugReports: https://github.com/johannes-titz/leabRa/issues
