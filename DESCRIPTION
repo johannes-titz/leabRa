@@ -11,7 +11,7 @@ Description: The algorithm Leabra (local error driven and associative
     the 'MATLAB' version by Sergio Verduzco-Flores, which in turn was based on
     the description of the algorithm by Randall O'Reilly (1996)
     URL:<ftp://grey.colorado.edu/pub/oreilly/thesis/oreilly_thesis.all.pdf>. For
-    more general (not R specific) information on the algorithm Leabra see
+    more general (not 'R' specific) information on the algorithm Leabra see
     <https://grey.colorado.edu/emergent/index.php/Leabra>.
 Depends: R (>= 2.10)
 License: GPL-3 + file LICENSE
